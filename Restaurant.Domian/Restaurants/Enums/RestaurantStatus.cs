@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Restaurant.Domain.Restaurants.Enums;
 
-namespace Restaurant.Domian.Restaurants.Enums
+public enum RestaurantStatus
 {
-    public enum RestaurantStatus
-    {
-        Pending,
-        Approved,
-        Rejected,
-        Closed
-    }
+    Pending,           // FR-02: قبل الاعتماد
+    Approved,          // معتمد من الأدمن
+    Rejected,          // مرفوض
+    Suspended,         // معلق من الأدمن
+    Open,              // مفتوح (FR-09)
+    Closed,            // مغلق (FR-09)
+    TemporarilyClosed, // مغلق مؤقتاً (FR-09)
+    UnderMaintenance   // تحت الصيانة (FR-09)
 }

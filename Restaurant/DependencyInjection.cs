@@ -83,12 +83,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionMode = configuration.GetValue<string>("ConnectionMode");
-
-        var connectionString =
-            connectionMode == "Prod"
-                ? configuration.GetConnectionString("ProdCS")
-                : configuration.GetConnectionString("DevCS");
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         services
             .AddHealthChecks()

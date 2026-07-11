@@ -30,12 +30,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionMode = configuration.GetValue<string>("ConnectionMode");
 
-        var connectionString =
-            connectionMode == "ProdCS"
-                ? configuration.GetConnectionString("ProdCS")
-                : configuration.GetConnectionString("DevCS");
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         services.AddSingleton(TimeProvider.System);
 

@@ -5,6 +5,15 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load optional local development config (highest priority in Development)
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddJsonFile(
+        "appsettings.Development.Local.json",
+        optional: true,
+        reloadOnChange: true);
+}
+
 builder.Host.UseSerilog((ctx, lc) =>
     lc.ReadFrom.Configuration(ctx.Configuration));
 

@@ -7,6 +7,7 @@ using Restaurant.Domain.Restaurants.Enums;
 using Restaurant.Domain.Restaurants.Events;
 using Restaurant.Domain.Results;
 using Restaurant.Domain.WorkingHours;
+using Restaurant.Domian.Restaurants.Events;
 
 namespace Restaurant.Domain.Restaurants;
 
@@ -87,31 +88,71 @@ public sealed class Restaurant : AuditableEntity
     }
 
     // FR-03: تعديل البيانات
-    public Result<Updated> UpdateDetails(string name, string description, string phone,
-        string email, CuisineType cuisineType, string address, string? logo, string? coverImage)
+    public Result<Updated> UpdateDetails(string? name,string? description,string? phone,string? email,CuisineType? cuisineType,string? address)
     {
-        if (string.IsNullOrWhiteSpace(name)) return RestaurantErrors.InvalidName;
-        if (string.IsNullOrWhiteSpace(phone)) return RestaurantErrors.InvalidPhone;
-        if (string.IsNullOrWhiteSpace(email)) return RestaurantErrors.InvalidEmail;
-        if (string.IsNullOrWhiteSpace(address)) return RestaurantErrors.InvalidAddress;
+        if (name is not null)
+            Name = name.Trim();
 
-        Name = name.Trim(); Description = description.Trim(); Phone = phone.Trim();
-        Email = email.Trim(); CuisineType = cuisineType; Address = address.Trim();
-        Logo = logo; CoverImage = coverImage;
+        if (description is not null)
+            Description = description.Trim();
+
+        if (phone is not null)
+            Phone = phone.Trim();
+
+        if (email is not null)
+            Email = email.Trim();
+
+        if (cuisineType.HasValue)
+            CuisineType = cuisineType.Value;
+
+        if (address is not null)
+            Address = address.Trim();
+
         return Result.Updated;
     }
 
-    // FR-02: اعتماد/رفض الأدمن
+    // FR-02: مراجعة المطعم من الأدمن
     public Result<Updated> Approve()
     {
-        if (IsApproved) return RestaurantErrors.AlreadyApproved;
-        Status = RestaurantStatus.Approved; IsApproved = true;
+        if (IsApproved)
+            return RestaurantErrors.AlreadyApproved;
+
+        if (Status != RestaurantStatus.Pending)
+            return RestaurantErrors.InvalidReviewStatus;
+
+        Status = RestaurantStatus.Approved;
+        IsApproved = true;
+
+        AddDomainEvent(
+            new RestaurantApprovedEvent(Id));
+
         return Result.Updated;
     }
 
-    public Result<Updated> Reject()
+    public Result<Updated> Reject(string? reason)
     {
-        Status = RestaurantStatus.Rejected; IsApproved = false;
+        if (Status != RestaurantStatus.Pending)
+            return RestaurantErrors.InvalidReviewStatus;
+
+        Status = RestaurantStatus.Rejected;
+        IsApproved = false;
+
+        AddDomainEvent(
+            new RestaurantRejectedEvent(
+                Id,
+                reason));
+
+        return Result.Updated;
+    }
+
+    public Result<Updated> RequestModification()
+    {
+        if (Status != RestaurantStatus.Pending)
+            return RestaurantErrors.InvalidReviewStatus;
+
+        Status = RestaurantStatus.Pending;
+        IsApproved = false;
+
         return Result.Updated;
     }
 

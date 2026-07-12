@@ -4,6 +4,7 @@ using Restaurant.Domain.Common;
 using Restaurant.Domain.DeliveryZones;
 using Restaurant.Domain.Foods;
 using Restaurant.Domain.Restaurants.Enums;
+using Restaurant.Domain.Restaurants.Events;
 using Restaurant.Domain.Results;
 using Restaurant.Domain.WorkingHours;
 
@@ -74,8 +75,15 @@ public sealed class Restaurant : AuditableEntity
         if (string.IsNullOrWhiteSpace(email)) return RestaurantErrors.InvalidEmail;
         if (string.IsNullOrWhiteSpace(address)) return RestaurantErrors.InvalidAddress;
 
-        return new Restaurant(id, ownerId, name.Trim(), description.Trim(), phone.Trim(),
-            email.Trim(), cuisineType, address.Trim(), logo, coverImage);
+        var restaurant = new Restaurant(id,ownerId,name.Trim(),description.Trim(),phone.Trim(),email.Trim(),cuisineType,address.Trim(),logo,coverImage);
+
+        restaurant.AddDomainEvent(
+            new RestaurantRequestedEvent(
+                restaurant.Id,
+                restaurant.OwnerId,
+                restaurant.Name));
+
+        return restaurant;
     }
 
     // FR-03: تعديل البيانات

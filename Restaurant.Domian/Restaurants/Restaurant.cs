@@ -88,17 +88,26 @@ public sealed class Restaurant : AuditableEntity
     }
 
     // FR-03: تعديل البيانات
-    public Result<Updated> UpdateDetails(string name, string description, string phone,
-        string email, CuisineType cuisineType, string address, string? logo, string? coverImage)
+    public Result<Updated> UpdateDetails(string? name,string? description,string? phone,string? email,CuisineType? cuisineType,string? address)
     {
-        if (string.IsNullOrWhiteSpace(name)) return RestaurantErrors.InvalidName;
-        if (string.IsNullOrWhiteSpace(phone)) return RestaurantErrors.InvalidPhone;
-        if (string.IsNullOrWhiteSpace(email)) return RestaurantErrors.InvalidEmail;
-        if (string.IsNullOrWhiteSpace(address)) return RestaurantErrors.InvalidAddress;
+        if (name is not null)
+            Name = name.Trim();
 
-        Name = name.Trim(); Description = description.Trim(); Phone = phone.Trim();
-        Email = email.Trim(); CuisineType = cuisineType; Address = address.Trim();
-        Logo = logo; CoverImage = coverImage;
+        if (description is not null)
+            Description = description.Trim();
+
+        if (phone is not null)
+            Phone = phone.Trim();
+
+        if (email is not null)
+            Email = email.Trim();
+
+        if (cuisineType.HasValue)
+            CuisineType = cuisineType.Value;
+
+        if (address is not null)
+            Address = address.Trim();
+
         return Result.Updated;
     }
 

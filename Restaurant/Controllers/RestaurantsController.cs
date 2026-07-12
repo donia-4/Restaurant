@@ -5,8 +5,10 @@ using Restaurant.Application.Features.Restaurants.Commands.ApproveRestaurant;
 using Restaurant.Application.Features.Restaurants.Commands.CreateRestaurant;
 using Restaurant.Application.Features.Restaurants.Commands.RejectRestaurant;
 using Restaurant.Application.Features.Restaurants.Commands.RequestRestaurantModification;
+using Restaurant.Application.Features.Restaurants.Commands.UpdateRestaurant;
 using Restaurant.Application.Features.Restaurants.CreateRestaurant;
 using Restaurant.Application.Features.Restaurants.Dtos.CreateRestaurant;
+using Restaurant.Application.Features.Restaurants.Dtos.UpdateRestaurant;
 using Restaurant.Application.Features.Restaurants.Queries.GetAllRestaurants;
 
 namespace Restaurant.API.Controllers;
@@ -100,6 +102,32 @@ public sealed class RestaurantsController(ISender sender)
             response => OkEnvelope(
                 response,
                 "Restaurants retrieved successfully"),
+            Problem);
+    }
+
+    [HttpPatch("{restaurantId:guid}")]
+    public async Task<IActionResult> UpdateRestaurant(
+    Guid restaurantId,
+    [FromForm] UpdateRestaurantRequest request,
+    CancellationToken cancellationToken)
+    {
+        var command = new UpdateRestaurantCommand(
+            restaurantId,
+            request.Name,
+            request.Description,
+            request.Phone,
+            request.Email,
+            request.CuisineType,
+            request.Address);
+
+        var result = await sender.Send(
+            command,
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            response => OkEnvelope(
+                response,
+                "Restaurant updated successfully"),
             Problem);
     }
 }

@@ -1,4 +1,5 @@
-﻿using Restaurant.Application.Common.Interfaces.Repositories;
+﻿using Microsoft.EntityFrameworkCore;
+using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Infrastructure.Data;
 
 namespace Restaurant.Infrastructure.Repositories;
@@ -15,6 +16,24 @@ public sealed class RestaurantRepository(RestaurantDbContext context)
         await _context.Restaurants.AddAsync(
             restaurant,
             cancellationToken);
+    }
+
+    public async Task<Domain.Restaurants.Restaurant?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Restaurants
+            .FirstOrDefaultAsync(
+                restaurant => restaurant.Id == id,
+                cancellationToken);
+    }
+
+    public async Task<List<Domain.Restaurants.Restaurant>> GetAllAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Restaurants
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 
     public async Task SaveChangesAsync(

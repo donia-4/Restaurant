@@ -7,6 +7,7 @@ using Restaurant.Domain.Restaurants.Enums;
 using Restaurant.Domain.Restaurants.Events;
 using Restaurant.Domain.Results;
 using Restaurant.Domain.WorkingHours;
+using Restaurant.Domian.Restaurants.Events;
 
 namespace Restaurant.Domain.Restaurants;
 
@@ -101,17 +102,48 @@ public sealed class Restaurant : AuditableEntity
         return Result.Updated;
     }
 
-    // FR-02: اعتماد/رفض الأدمن
+    // FR-02: مراجعة المطعم من الأدمن
     public Result<Updated> Approve()
     {
-        if (IsApproved) return RestaurantErrors.AlreadyApproved;
-        Status = RestaurantStatus.Approved; IsApproved = true;
+        if (IsApproved)
+            return RestaurantErrors.AlreadyApproved;
+
+        if (Status != RestaurantStatus.Pending)
+            return RestaurantErrors.InvalidReviewStatus;
+
+        Status = RestaurantStatus.Approved;
+        IsApproved = true;
+
+        AddDomainEvent(
+            new RestaurantApprovedEvent(Id));
+
         return Result.Updated;
     }
 
-    public Result<Updated> Reject()
+    public Result<Updated> Reject(string? reason)
     {
-        Status = RestaurantStatus.Rejected; IsApproved = false;
+        if (Status != RestaurantStatus.Pending)
+            return RestaurantErrors.InvalidReviewStatus;
+
+        Status = RestaurantStatus.Rejected;
+        IsApproved = false;
+
+        AddDomainEvent(
+            new RestaurantRejectedEvent(
+                Id,
+                reason));
+
+        return Result.Updated;
+    }
+
+    public Result<Updated> RequestModification()
+    {
+        if (Status != RestaurantStatus.Pending)
+            return RestaurantErrors.InvalidReviewStatus;
+
+        Status = RestaurantStatus.Pending;
+        IsApproved = false;
+
         return Result.Updated;
     }
 

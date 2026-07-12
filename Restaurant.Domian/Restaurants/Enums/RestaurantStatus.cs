@@ -1,4 +1,8 @@
-﻿namespace Restaurant.Domain.Restaurants.Enums;
+﻿using System.Text.Json.Serialization;
+
+namespace Restaurant.Domain.Restaurants.Enums;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
 
 public enum RestaurantStatus
 {

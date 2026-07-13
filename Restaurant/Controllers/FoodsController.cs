@@ -36,7 +36,7 @@ namespace Restaurant.API.Controllers
 
         [AllowAnonymous]
         [HttpPut("{foodId:guid}")]
-        public async Task<IActionResult> UpdateFood(Guid foodId, [FromBody] UpdateFoodRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> UpdateFood(Guid foodId, [FromForm] UpdateFoodRequest request, CancellationToken cancellationToken)
         {
             var result = await sender.Send(new UpdateFoodCommand(foodId, request), cancellationToken);
             return result.Match<IActionResult>(r => OkEnvelope(r, "Food item updated successfully"), Problem);

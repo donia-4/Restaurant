@@ -12,20 +12,49 @@ using Restaurant.Domain.Results;
 
 namespace Restaurant.Application.Features.Foods.Commands.UpdateFood
 {
-    public sealed class UpdateFoodCommandHandler(IFoodRepository foodRepository, ICacheService cacheService) : IRequestHandler<UpdateFoodCommand, Result<UpdateFoodResponse>>
+    public sealed class UpdateFoodCommandHandler(
+    IFoodRepository foodRepository,
+    ICacheService cacheService)
+    : IRequestHandler<UpdateFoodCommand, Result<UpdateFoodResponse>>
     {
-        public async Task<Result<UpdateFoodResponse>> Handle(UpdateFoodCommand command, CancellationToken cancellationToken)
+        private readonly IFoodRepository _foodRepository = foodRepository;
+        private readonly ICacheService _cacheService = cacheService;
+
+        public async Task<Result<UpdateFoodResponse>> Handle(
+            UpdateFoodCommand command,
+            CancellationToken cancellationToken)
         {
-            var food = await foodRepository.GetByIdAsync(command.FoodId, cancellationToken);
-            if (food is null) return FoodErrors.NotFound;
+            var request = command.Request;
 
-            var result = food.Update(command.Request.Name, command.Request.Description, command.Request.Price, command.Request.CategoryId, command.Request.Image, command.Request.PreparationTimeMinutes, command.Request.Calories);
-            if (result.IsError) return result.TopError;
+            var food = await _foodRepository.GetByIdAsync(
+                command.FoodId,
+                cancellationToken);
 
-            await foodRepository.SaveChangesAsync(cancellationToken);
-            await cacheService.RemoveByTagAsync($"food:{food.Id}", cancellationToken);
-            await cacheService.RemoveByTagAsync($"restaurant:{food.RestaurantId}:menu", cancellationToken);
-            await cacheService.RemoveByTagAsync("foods", cancellationToken);
+            if (food is null)
+            {
+                return FoodErrors.NotFound;
+            }
+
+            var result = food.Update(
+                request.Name ?? food.Name,
+                request.Description ?? food.Description,
+                request.Price ?? food.Price,
+                request.CategoryId ?? food.CategoryId,
+                request.Image ?? food.Image,
+                request.PreparationTimeMinutes ?? food.PreparationTimeMinutes,
+                request.Calories ?? food.Calories);
+
+            if (result.IsError)
+            {
+                return result.TopError;
+            }
+
+            await _foodRepository.SaveChangesAsync(cancellationToken);
+
+            await _cacheService.RemoveByTagAsync($"food:{food.Id}", cancellationToken);
+            await _cacheService.RemoveByTagAsync($"restaurant:{food.RestaurantId}:menu", cancellationToken);
+            await _cacheService.RemoveByTagAsync("foods", cancellationToken);
+
             return new UpdateFoodResponse(food.Id);
         }
     }

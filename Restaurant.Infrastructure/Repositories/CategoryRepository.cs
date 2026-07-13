@@ -1,13 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using Restaurant.Application.Common.Interfaces.Repositories;
+using Restaurant.Domain.Categories;
+using Restaurant.Infrastructure.Data;
 
-namespace Restaurant.Infrastructure.Repositories
+namespace Restaurant.Infrastructure.Repositories;
+
+public sealed class CategoryRepository(RestaurantDbContext context)
+    : ICategoryRepository
 {
-    public class CategoryRepository : ICategoryRepository
+    private readonly RestaurantDbContext _context = context;
+
+    public async Task AddAsync(
+        Category category,
+        CancellationToken cancellationToken = default)
     {
+        await _context.Categories.AddAsync(category, cancellationToken);
+    }
+
+    public async Task<Category?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Categories
+            .FirstOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+    }
+
+    public async Task<Category?> GetByIdWithFoodsAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Categories
+            .Include(x => x.Foods)
+            .FirstOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Category>> GetByRestaurantIdAsync(
+        Guid restaurantId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Categories
+            .AsNoTracking()
+            .Include(x => x.Foods)
+            .Where(x => x.RestaurantId == restaurantId)
+            .OrderBy(x => x.DisplayOrder)
+            .ToListAsync(cancellationToken);
+    }
+
+    public void Remove(Category category)
+    {
+        _context.Categories.Remove(category);
+    }
+
+    public async Task SaveChangesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

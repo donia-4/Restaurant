@@ -23,7 +23,6 @@ namespace Restaurant.Infrastructure.Repositories
         {
             return await _context.Branches
                 .Include(x => x.WorkingHours)
-                .AsNoTracking()
                 .FirstOrDefaultAsync(
                     x => x.Id == id,
                     cancellationToken);
@@ -32,7 +31,6 @@ namespace Restaurant.Infrastructure.Repositories
         public async Task<Branch?> GetByIdWithWorkingHoursAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.Branches
-                .AsNoTracking()
                 .Include(x => x.WorkingHours)
                 .FirstOrDefaultAsync(
                     x => x.Id == id,
@@ -54,10 +52,10 @@ namespace Restaurant.Infrastructure.Repositories
             _context.Branches.Remove(branch);
         }
 
-        public Task SaveChangesAsync(
+        public async Task SaveChangesAsync(
             CancellationToken cancellationToken = default)
         {
-            return _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

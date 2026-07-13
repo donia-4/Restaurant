@@ -1,0 +1,139 @@
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Restaurant.Application.Features.Branches.Commands.ActivateBranch;
+using Restaurant.Application.Features.Branches.Commands.CreateBranch;
+using Restaurant.Application.Features.Branches.Commands.DeactivateBranch;
+using Restaurant.Application.Features.Branches.Commands.DeleteBranch;
+using Restaurant.Application.Features.Branches.Commands.UpdateBranch;
+using Restaurant.Application.Features.Branches.Dtos.CreateBranch;
+using Restaurant.Application.Features.Branches.Dtos.UpdateBranch;
+using Restaurant.Application.Features.Branches.Queries.GetBranchById;
+
+namespace Restaurant.API.Controllers;
+
+[Route("api/branches")]
+public sealed class BranchesController(ISender sender) : ApiController
+{
+    [AllowAnonymous]
+    [HttpPost]
+    public async Task<IActionResult> CreateBranch(
+        [FromBody] CreateBranchRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new CreateBranchCommand(request);
+
+        var result = await sender.Send(
+            command,
+            cancellationToken);
+
+        if (result.IsError)
+        {
+            return Problem(result.Errors);
+        }
+
+        return CreatedEnvelope(
+            result.Value,
+            "Branch created successfully");
+    }
+
+    // ==========================================
+    // READ
+    // ==========================================
+    [AllowAnonymous]
+    [HttpGet("{branchId:guid}")]
+    public async Task<IActionResult> GetBranchById(
+        Guid branchId,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new GetBranchByIdQuery(branchId),
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            response => OkEnvelope(
+                response,
+                "Branch retrieved successfully"),
+            Problem);
+    }
+
+    // ==========================================
+    // UPDATE
+    // ==========================================
+    [AllowAnonymous]
+    [HttpPut("{branchId:guid}")]
+    public async Task<IActionResult> UpdateBranch(
+        Guid branchId,
+        [FromBody] UpdateBranchRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateBranchCommand(branchId, request);
+
+        var result = await sender.Send(
+            command,
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            response => OkEnvelope(
+                response,
+                "Branch updated successfully"),
+            Problem);
+    }
+
+    // ==========================================
+    // DELETE
+    // ==========================================
+    [AllowAnonymous]
+    [HttpDelete("{branchId:guid}")]
+    public async Task<IActionResult> DeleteBranch(
+        Guid branchId,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new DeleteBranchCommand(branchId),
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            _ => OkEnvelope((object?)null, "Branch deleted successfully"),Problem);
+    }
+
+    // ==========================================
+    // ACTIVATE
+    // ==========================================
+    [AllowAnonymous]
+    [HttpPatch("{branchId:guid}/activate")]
+    public async Task<IActionResult> ActivateBranch(
+        Guid branchId,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new ActivateBranchCommand(branchId),
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            response => OkEnvelope(
+                response,
+                "Branch activated successfully"),
+            Problem);
+    }
+
+    // ==========================================
+    // DEACTIVATE
+    // ==========================================
+    [AllowAnonymous]
+    [HttpPatch("{branchId:guid}/deactivate")]
+    public async Task<IActionResult> DeactivateBranch(
+        Guid branchId,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new DeactivateBranchCommand(branchId),
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            response => OkEnvelope(
+                response,
+                "Branch deactivated successfully"),
+            Problem);
+    }
+}

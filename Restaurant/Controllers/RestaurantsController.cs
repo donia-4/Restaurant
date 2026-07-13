@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Restaurant.Application.Features.Branches.Queries.GetRestaurantBranches;
 using Restaurant.Application.Features.Restaurants.Commands.ApproveRestaurant;
 using Restaurant.Application.Features.Restaurants.Commands.CreateRestaurant;
 using Restaurant.Application.Features.Restaurants.Commands.RejectRestaurant;
@@ -128,6 +129,23 @@ public sealed class RestaurantsController(ISender sender)
             response => OkEnvelope(
                 response,
                 "Restaurant updated successfully"),
+            Problem);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("{restaurantId:guid}/branches")]
+    public async Task<IActionResult> GetRestaurantBranches(
+    Guid restaurantId,
+    CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new GetRestaurantBranchesQuery(restaurantId),
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            response => OkEnvelope(
+                response,
+                "Restaurant branches retrieved successfully"),
             Problem);
     }
 }

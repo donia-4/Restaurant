@@ -47,16 +47,46 @@ public sealed class Food : AuditableEntity
             price, image, preparationTimeMinutes, calories);
     }
 
-    public Result<Updated> Update(string name, string description, decimal price,
-        Guid categoryId, string? image, int preparationTimeMinutes, int? calories)
+    public Result<Updated> Update(string? name = null,string? description = null,decimal? price = null,Guid? categoryId = null,string? image = null,int? preparationTimeMinutes = null,int? calories = null)
     {
-        if (string.IsNullOrWhiteSpace(name)) return FoodErrors.InvalidName;
-        if (categoryId == Guid.Empty) return FoodErrors.InvalidCategory;
-        if (price < 0) return FoodErrors.InvalidPrice;
+        if (name is not null)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return FoodErrors.InvalidName;
+            Name = name.Trim();
+        }
 
-        Name = name.Trim(); Description = description.Trim(); Price = price;
-        CategoryId = categoryId; Image = image;
-        PreparationTimeMinutes = preparationTimeMinutes; Calories = calories;
+        if (description is not null)
+        {
+            Description = description.Trim();
+        }
+
+        if (price.HasValue)
+        {
+            if (price.Value < 0) return FoodErrors.InvalidPrice;
+            Price = price.Value;
+        }
+
+        if (categoryId.HasValue)
+        {
+            if (categoryId.Value == Guid.Empty) return FoodErrors.InvalidCategory;
+            CategoryId = categoryId.Value;
+        }
+
+        if (image is not null)
+        {
+            Image = image;
+        }
+
+        if (preparationTimeMinutes.HasValue)
+        {
+            PreparationTimeMinutes = preparationTimeMinutes.Value;
+        }
+
+        if (calories.HasValue)
+        {
+            Calories = calories.Value;
+        }
+
         return Result.Updated;
     }
 

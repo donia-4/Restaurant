@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Restaurant.Application.Features.Branches.Queries.GetRestaurantBranches;
+using Restaurant.Application.Features.Categories.Queries.GetRestaurantCategories;
 using Restaurant.Application.Features.Foods.Queries.GetRestaurantMenu;
 using Restaurant.Application.Features.Restaurants.Commands.ApproveRestaurant;
 using Restaurant.Application.Features.Restaurants.Commands.CreateRestaurant;
@@ -156,5 +157,21 @@ public sealed class RestaurantsController(ISender sender)
     {
         var result = await sender.Send(new GetRestaurantMenuQuery(restaurantId), cancellationToken);
         return result.Match<IActionResult>(r => OkEnvelope(r, "Restaurant menu retrieved successfully"), Problem);
+    }
+    [AllowAnonymous]
+    [HttpGet("{restaurantId:guid}/categories")]
+    public async Task<IActionResult> GetRestaurantCategories(
+    Guid restaurantId,
+    CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new GetRestaurantCategoriesQuery(restaurantId),
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            response => OkEnvelope(
+                response,
+                "Categories retrieved successfully"),
+            Problem);
     }
 }

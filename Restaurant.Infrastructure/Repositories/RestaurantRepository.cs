@@ -23,6 +23,7 @@ public sealed class RestaurantRepository(RestaurantDbContext context)
         CancellationToken cancellationToken = default)
     {
         return await _context.Restaurants
+            .Include(restaurant => restaurant.Branches)
             .FirstOrDefaultAsync(
                 restaurant => restaurant.Id == id,
                 cancellationToken);

@@ -58,5 +58,14 @@ public sealed class Branch : AuditableEntity
     public Result<Updated> Deactivate() { IsActive = false; return Result.Updated; }
 
     public Result<Updated> AddWorkingHour(WorkingHour wh) { _workingHours.Add(wh); return Result.Updated; }
+    public Result<Updated> ReplaceWorkingHours(IReadOnlyCollection<WorkingHour> workingHours)
+    {
+        ArgumentNullException.ThrowIfNull(workingHours);
+
+        _workingHours.Clear();
+        _workingHours.AddRange(workingHours);
+
+        return Result.Updated;
+    }
     public Result<Updated> AddDeliveryZone(DeliveryZone zone) { _deliveryZones.Add(zone); return Result.Updated; }
 }

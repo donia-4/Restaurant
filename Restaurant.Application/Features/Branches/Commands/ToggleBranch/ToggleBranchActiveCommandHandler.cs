@@ -6,22 +6,23 @@ using System.Threading.Tasks;
 using MediatR;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
-using Restaurant.Application.Features.Branches.Dtos.ActivateBranch;
+using Restaurant.Application.Features.Branches.Commands.ToggleBranch;
+using Restaurant.Application.Features.Branches.Dtos.DeactivateBranch;
 using Restaurant.Domain.Branches;
 using Restaurant.Domain.Results;
 
-namespace Restaurant.Application.Features.Branches.Commands.ActivateBranch
+namespace Restaurant.Application.Features.Branches.Commands.DeactivateBranch
 {
-    public sealed class ActivateBranchCommandHandler(
+    public sealed class ToggleBranchActiveCommandHandler(
     IBranchRepository branchRepository,
     ICacheService cacheService)
-    : IRequestHandler<ActivateBranchCommand, Result<ActivateBranchResponse>>
+    : IRequestHandler<ToggleBranchActiveCommand, Result<ToggleBranchActiveResponse>>
     {
         private readonly IBranchRepository _branchRepository = branchRepository;
         private readonly ICacheService _cacheService = cacheService;
 
-        public async Task<Result<ActivateBranchResponse>> Handle(
-            ActivateBranchCommand request,
+        public async Task<Result<ToggleBranchActiveResponse>> Handle(
+            ToggleBranchActiveCommand request,
             CancellationToken cancellationToken)
         {
             var branch = await _branchRepository.GetByIdAsync(
@@ -33,21 +34,29 @@ namespace Restaurant.Application.Features.Branches.Commands.ActivateBranch
                 return BranchErrors.NotFound;
             }
 
-            var activateResult = branch.Activate();
+            Result<Updated> toggleResult;
 
-            if (activateResult.IsError)
+            if (branch.IsActive)
             {
-                return activateResult.TopError;
+                toggleResult = branch.Deactivate();
+            }
+            else
+            {
+                toggleResult = branch.Activate();
+            }
+
+            if (toggleResult.IsError)
+            {
+                return toggleResult.TopError;
             }
 
             await _branchRepository.SaveChangesAsync(cancellationToken);
 
-            // Cache invalidation
             await _cacheService.RemoveByTagAsync($"branch:{branch.Id}", cancellationToken);
             await _cacheService.RemoveByTagAsync($"restaurant:{branch.RestaurantId}:branches", cancellationToken);
             await _cacheService.RemoveByTagAsync("branches", cancellationToken);
 
-            return new ActivateBranchResponse(branch.Id);
+            return new ToggleBranchActiveResponse(branch.Id, branch.IsActive);
         }
     }
 }

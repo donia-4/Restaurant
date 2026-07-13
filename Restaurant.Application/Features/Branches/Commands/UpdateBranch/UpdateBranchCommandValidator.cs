@@ -1,31 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FluentValidation;
+﻿using FluentValidation;
 
-namespace Restaurant.Application.Features.Branches.Commands.UpdateBranch
+namespace Restaurant.Application.Features.Branches.Commands.UpdateBranch;
+
+public sealed class UpdateBranchCommandValidator : AbstractValidator<UpdateBranchCommand>
 {
-    public sealed class UpdateBranchCommandValidator : AbstractValidator<UpdateBranchCommand>
+    public UpdateBranchCommandValidator()
     {
-        public UpdateBranchCommandValidator()
-        {
-            RuleFor(x => x.BranchId)
-                .NotEmpty().WithMessage("Branch ID is required.");
+        RuleFor(x => x.BranchId)
+            .NotEmpty();
 
-            RuleFor(x => x.Request.Name)
-                .NotEmpty().WithMessage("Branch name is required.")
-                .MaximumLength(100).WithMessage("Branch name must not exceed 100 characters.");
+        RuleFor(x => x.Request.Name)
+            .MaximumLength(100)
+            .When(x => x.Request.Name is not null);
 
-            RuleFor(x => x.Request.Address)
-                .NotEmpty().WithMessage("Branch address is required.");
+        RuleFor(x => x.Request.Address)
+            .MaximumLength(250)
+            .When(x => x.Request.Address is not null);
 
-            RuleFor(x => x.Request.Phone)
-                .NotEmpty().WithMessage("Branch phone is required.");
+        RuleFor(x => x.Request.Phone)
+            .MaximumLength(20)
+            .When(x => x.Request.Phone is not null);
 
-            RuleFor(x => x.Request.WorkingHours)
-                .NotNull().WithMessage("Working hours are required.");
-        }
+        RuleForEach(x => x.Request.WorkingHours!)
+            .ChildRules(hour =>
+            {
+                hour.RuleFor(x => x.DayOfWeek)
+                    .IsInEnum();
+
+                hour.RuleFor(x => x.OpenTime)
+                    .LessThan(x => x.CloseTime)
+                    .When(x => !x.IsClosed);
+            })
+            .When(x => x.Request.WorkingHours is not null);
     }
 }

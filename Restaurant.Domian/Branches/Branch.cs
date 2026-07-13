@@ -43,14 +43,42 @@ public sealed class Branch : AuditableEntity
         return new Branch(id, restaurantId, name.Trim(), address.Trim(), latitude, longitude, phone.Trim());
     }
 
-    public Result<Updated> Update(string name, string address, decimal latitude, decimal longitude, string phone)
+    public Result<Updated> Update(string? name,string? address,decimal? latitude,decimal? longitude,string? phone)
     {
-        if (string.IsNullOrWhiteSpace(name)) return BranchErrors.InvalidName;
-        if (string.IsNullOrWhiteSpace(address)) return BranchErrors.InvalidAddress;
-        if (string.IsNullOrWhiteSpace(phone)) return BranchErrors.InvalidPhone;
+        if (name is not null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return BranchErrors.InvalidName;
 
-        Name = name.Trim(); Address = address.Trim(); Latitude = latitude;
-        Longitude = longitude; Phone = phone.Trim();
+            Name = name.Trim();
+        }
+
+        if (address is not null)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+                return BranchErrors.InvalidAddress;
+
+            Address = address.Trim();
+        }
+
+        if (latitude.HasValue)
+        {
+            Latitude = latitude.Value;
+        }
+
+        if (longitude.HasValue)
+        {
+            Longitude = longitude.Value;
+        }
+
+        if (phone is not null)
+        {
+            if (string.IsNullOrWhiteSpace(phone))
+                return BranchErrors.InvalidPhone;
+
+            Phone = phone.Trim();
+        }
+
         return Result.Updated;
     }
 

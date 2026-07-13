@@ -1,10 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Restaurant.Application.Features.Branches.Commands.ActivateBranch;
 using Restaurant.Application.Features.Branches.Commands.CreateBranch;
-using Restaurant.Application.Features.Branches.Commands.DeactivateBranch;
 using Restaurant.Application.Features.Branches.Commands.DeleteBranch;
+using Restaurant.Application.Features.Branches.Commands.ToggleBranch;
 using Restaurant.Application.Features.Branches.Commands.UpdateBranch;
 using Restaurant.Application.Features.Branches.Dtos.CreateBranch;
 using Restaurant.Application.Features.Branches.Dtos.UpdateBranch;
@@ -64,7 +63,7 @@ public sealed class BranchesController(ISender sender) : ApiController
     [HttpPut("{branchId:guid}")]
     public async Task<IActionResult> UpdateBranch(
         Guid branchId,
-        [FromBody] UpdateBranchRequest request,
+        [FromForm] UpdateBranchRequest request,
         CancellationToken cancellationToken)
     {
         var command = new UpdateBranchCommand(branchId, request);
@@ -98,42 +97,23 @@ public sealed class BranchesController(ISender sender) : ApiController
     }
 
     // ==========================================
-    // ACTIVATE
+    // ACTIVATE / DEACTIVATE
     // ==========================================
+
     [AllowAnonymous]
-    [HttpPatch("{branchId:guid}/activate")]
-    public async Task<IActionResult> ActivateBranch(
-        Guid branchId,
-        CancellationToken cancellationToken)
+    [HttpPatch("{branchId:guid}/toggle-active")]
+    public async Task<IActionResult> ToggleBranchActive(
+    Guid branchId,
+    CancellationToken cancellationToken)
     {
         var result = await sender.Send(
-            new ActivateBranchCommand(branchId),
+            new ToggleBranchActiveCommand(branchId),
             cancellationToken);
 
         return result.Match<IActionResult>(
             response => OkEnvelope(
                 response,
-                "Branch activated successfully"),
-            Problem);
-    }
-
-    // ==========================================
-    // DEACTIVATE
-    // ==========================================
-    [AllowAnonymous]
-    [HttpPatch("{branchId:guid}/deactivate")]
-    public async Task<IActionResult> DeactivateBranch(
-        Guid branchId,
-        CancellationToken cancellationToken)
-    {
-        var result = await sender.Send(
-            new DeactivateBranchCommand(branchId),
-            cancellationToken);
-
-        return result.Match<IActionResult>(
-            response => OkEnvelope(
-                response,
-                "Branch deactivated successfully"),
+                "Branch active status toggled successfully"),
             Problem);
     }
 }

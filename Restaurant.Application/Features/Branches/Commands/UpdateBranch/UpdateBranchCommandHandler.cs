@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MediatR;
+﻿using MediatR;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Application.Features.Branches.Dtos.UpdateBranch;
@@ -11,43 +6,45 @@ using Restaurant.Domain.Branches;
 using Restaurant.Domain.Results;
 using Restaurant.Domain.WorkingHours;
 
-namespace Restaurant.Application.Features.Branches.Commands.UpdateBranch
-{
-    public sealed class UpdateBranchCommandHandler(
+namespace Restaurant.Application.Features.Branches.Commands.UpdateBranch;
+
+public sealed class UpdateBranchCommandHandler(
     IBranchRepository branchRepository,
     ICacheService cacheService)
     : IRequestHandler<UpdateBranchCommand, Result<UpdateBranchResponse>>
+{
+    private readonly IBranchRepository _branchRepository = branchRepository;
+    private readonly ICacheService _cacheService = cacheService;
+
+    public async Task<Result<UpdateBranchResponse>> Handle(
+        UpdateBranchCommand command,
+        CancellationToken cancellationToken)
     {
-        private readonly IBranchRepository _branchRepository = branchRepository;
-        private readonly ICacheService _cacheService = cacheService;
+        var request = command.Request;
 
-        public async Task<Result<UpdateBranchResponse>> Handle(
-            UpdateBranchCommand command,
-            CancellationToken cancellationToken)
+        var branch = await _branchRepository.GetByIdWithWorkingHoursAsync(
+            command.BranchId,
+            cancellationToken);
+
+        if (branch is null)
         {
-            var request = command.Request;
+            return BranchErrors.NotFound;
+        }
 
-            var branch = await _branchRepository.GetByIdWithWorkingHoursAsync(
-                command.BranchId,
-                cancellationToken);
+        var updateResult = branch.Update(
+            request.Name,
+            request.Address,
+            request.Latitude,
+            request.Longitude,
+            request.Phone);
 
-            if (branch is null)
-            {
-                return BranchErrors.NotFound;
-            }
+        if (updateResult.IsError)
+        {
+            return updateResult.TopError;
+        }
 
-            var updateResult = branch.Update(
-                request.Name,
-                request.Address,
-                request.Latitude,
-                request.Longitude,
-                request.Phone);
-
-            if (updateResult.IsError)
-            {
-                return updateResult.TopError;
-            }
-
+        if (request.WorkingHours is not null)
+        {
             var workingHours = new List<WorkingHour>();
 
             foreach (var item in request.WorkingHours)
@@ -68,21 +65,29 @@ namespace Restaurant.Application.Features.Branches.Commands.UpdateBranch
                 workingHours.Add(workingHourResult.Value);
             }
 
-            var replaceWorkingHoursResult = branch.ReplaceWorkingHours(workingHours);
+            var replaceWorkingHoursResult =
+                branch.ReplaceWorkingHours(workingHours);
 
             if (replaceWorkingHoursResult.IsError)
             {
                 return replaceWorkingHoursResult.TopError;
             }
-
-            await _branchRepository.SaveChangesAsync(cancellationToken);
-
-            // Cache invalidation
-            await _cacheService.RemoveByTagAsync($"branch:{branch.Id}", cancellationToken);
-            await _cacheService.RemoveByTagAsync($"restaurant:{branch.RestaurantId}:branches", cancellationToken);
-            await _cacheService.RemoveByTagAsync("branches", cancellationToken);
-
-            return new UpdateBranchResponse(branch.Id);
         }
+
+        await _branchRepository.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.RemoveByTagAsync(
+            $"branch:{branch.Id}",
+            cancellationToken);
+
+        await _cacheService.RemoveByTagAsync(
+            $"restaurant:{branch.RestaurantId}:branches",
+            cancellationToken);
+
+        await _cacheService.RemoveByTagAsync(
+            "branches",
+            cancellationToken);
+
+        return new UpdateBranchResponse(branch.Id);
     }
 }

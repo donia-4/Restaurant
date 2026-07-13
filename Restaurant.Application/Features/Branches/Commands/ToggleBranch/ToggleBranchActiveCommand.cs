@@ -7,8 +7,8 @@ using MediatR;
 using Restaurant.Application.Features.Branches.Dtos.DeactivateBranch;
 using Restaurant.Domain.Results;
 
-namespace Restaurant.Application.Features.Branches.Commands.DeactivateBranch
+namespace Restaurant.Application.Features.Branches.Commands.ToggleBranch
 {
-    public sealed record DeactivateBranchCommand(Guid BranchId)
-    : IRequest<Result<DeactivateBranchResponse>>;
+    public sealed record ToggleBranchActiveCommand(Guid BranchId)
+    : IRequest<Result<ToggleBranchActiveResponse>>;
 }

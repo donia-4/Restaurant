@@ -34,6 +34,12 @@ public sealed class Category : AuditableEntity
         if (string.IsNullOrWhiteSpace(name)) return CategoryErrors.InvalidName;
         Name = name.Trim(); return Result.Updated;
     }
+    public Result<Deleted> CanDelete()
+    {
+        if (_foods.Count > 0)
+            return CategoryErrors.HasItems;
 
+        return Result.Deleted;
+    }
     public Result<Updated> Reorder(int displayOrder) { DisplayOrder = displayOrder; return Result.Updated; }
 }

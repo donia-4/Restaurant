@@ -67,6 +67,8 @@ public static class DependencyInjection
 
         services.AddScoped<IFoodRepository, FoodRepository>();
 
+        services.AddScoped<IBranchRepository, BranchRepository>();
+
         return services;
     }
 }

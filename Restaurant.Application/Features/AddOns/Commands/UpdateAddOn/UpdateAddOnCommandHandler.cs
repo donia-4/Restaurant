@@ -30,7 +30,7 @@ namespace Restaurant.Application.Features.AddOns.Commands.UpdateAddOn
             var name = command.Request.Name ?? addOn.Name;
             var price = command.Request.Price ?? addOn.Price;
             var isRequired = command.Request.IsRequired ?? addOn.IsRequired;
-            var maxQuantity = command.Request.MaxQuantity;
+            var maxQuantity = command.Request.MaxQuantity ?? addOn.MaxQuantity;
 
             var updateResult = addOn.Update(name, price, isRequired, maxQuantity);
             if (updateResult.IsError)

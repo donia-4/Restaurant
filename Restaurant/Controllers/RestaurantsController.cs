@@ -4,13 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using Restaurant.Application.Features.Branches.Queries.GetRestaurantBranches;
 using Restaurant.Application.Features.Categories.Queries.GetRestaurantCategories;
 using Restaurant.Application.Features.Foods.Queries.GetRestaurantMenu;
-using Restaurant.Application.Features.Restaurants.Commands.ApproveRestaurant;
+using Restaurant.Application.Features.Restaurants.Commands.ChangeRestaurantAvailability;
 using Restaurant.Application.Features.Restaurants.Commands.CreateRestaurant;
-using Restaurant.Application.Features.Restaurants.Commands.RejectRestaurant;
-using Restaurant.Application.Features.Restaurants.Commands.RequestRestaurantModification;
+using Restaurant.Application.Features.Restaurants.Commands.ReviewRestaurant;
 using Restaurant.Application.Features.Restaurants.Commands.UpdateRestaurant;
 using Restaurant.Application.Features.Restaurants.CreateRestaurant;
+using Restaurant.Application.Features.Restaurants.Dtos.ChangeRestaurantAvailability;
 using Restaurant.Application.Features.Restaurants.Dtos.CreateRestaurant;
+using Restaurant.Application.Features.Restaurants.Dtos.ReviewRestaurant;
 using Restaurant.Application.Features.Restaurants.Dtos.UpdateRestaurant;
 using Restaurant.Application.Features.Restaurants.Queries.GetAllRestaurants;
 
@@ -40,57 +41,6 @@ public sealed class RestaurantsController(ISender sender)
         return CreatedEnvelope(
             result.Value,
             "Restaurant request submitted successfully");
-    }
-    [AllowAnonymous]
-    [HttpPut("{id:guid}/approve")]
-    public async Task<IActionResult> Approve(
-    Guid id,
-    CancellationToken cancellationToken)
-    {
-        var result = await sender.Send(
-            new ApproveRestaurantCommand(id),
-            cancellationToken);
-
-        return result.Match<IActionResult>(
-            response => OkEnvelope(
-                response,
-                "Restaurant approved successfully"),
-            Problem);
-    }
-
-    [AllowAnonymous]
-    [HttpPut("{id:guid}/reject")]
-    public async Task<IActionResult> Reject(
-        Guid id,
-        [FromBody] string? reason,
-        CancellationToken cancellationToken)
-    {
-        var result = await sender.Send(
-            new RejectRestaurantCommand(id, reason),
-            cancellationToken);
-
-        return result.Match<IActionResult>(
-            response => OkEnvelope(
-                response,
-                "Restaurant rejected successfully"),
-            Problem);
-    }
-
-    [AllowAnonymous]
-    [HttpPut("{id:guid}/request-modification")]
-    public async Task<IActionResult> RequestModification(
-        Guid id,
-        CancellationToken cancellationToken)
-    {
-        var result = await sender.Send(
-            new RequestRestaurantModificationCommand(id),
-            cancellationToken);
-
-        return result.Match<IActionResult>(
-            response => OkEnvelope(
-                response,
-                "Restaurant modification requested successfully"),
-            Problem);
     }
 
     [AllowAnonymous]
@@ -172,6 +122,47 @@ public sealed class RestaurantsController(ISender sender)
             response => OkEnvelope(
                 response,
                 "Categories retrieved successfully"),
+            Problem);
+    }
+    // ==========================================
+    // REVIEW (Admin: Approve / Reject / Request Modification)
+    // ==========================================
+    [AllowAnonymous]
+    [HttpPut("{restaurantId:guid}/review")]
+    public async Task<IActionResult> ReviewRestaurant(
+        Guid restaurantId,
+        [FromForm] ReviewRestaurantRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new ReviewRestaurantCommand(restaurantId, request),
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            response => OkEnvelope(
+                response,
+                "Restaurant reviewed successfully"),
+            Problem);
+    }
+
+    // ==========================================
+    // CHANGE AVAILABILITY (Owner: Open / Closed / TemporarilyClosed / UnderMaintenance)
+    // ==========================================
+    [AllowAnonymous]
+    [HttpPut("{restaurantId:guid}/availability")]
+    public async Task<IActionResult> ChangeRestaurantAvailability(
+        Guid restaurantId,
+        [FromForm] ChangeRestaurantAvailabilityRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new ChangeRestaurantAvailabilityCommand(restaurantId, request),
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            response => OkEnvelope(
+                response,
+                "Restaurant availability changed successfully"),
             Problem);
     }
 }

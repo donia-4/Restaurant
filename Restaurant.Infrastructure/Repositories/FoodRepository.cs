@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Restaurant.Application.Common.Interfaces.Repositories;
+using Restaurant.Domain.AddOns;
 using Restaurant.Domain.Foods;
 using Restaurant.Infrastructure.Data;
 
@@ -70,5 +71,9 @@ public sealed class FoodRepository(RestaurantDbContext context)
         CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);
+    }
+    public async Task<AddOn?> GetAddOnByIdAsync(Guid addOnId, CancellationToken cancellationToken = default)
+    {
+        return await _context.AddOns.FirstOrDefaultAsync(x => x.Id == addOnId, cancellationToken);
     }
 }

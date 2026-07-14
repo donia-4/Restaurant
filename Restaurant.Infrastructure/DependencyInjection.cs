@@ -69,6 +69,9 @@ public static class DependencyInjection
 
         services.AddScoped<IBranchRepository, BranchRepository>();
 
+        services.AddScoped<IAddOnRepository, AddOnRepository>();
+
+
         return services;
     }
 }

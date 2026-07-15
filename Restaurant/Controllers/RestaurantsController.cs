@@ -12,8 +12,10 @@ using Restaurant.Application.Features.Restaurants.CreateRestaurant;
 using Restaurant.Application.Features.Restaurants.Dtos.ChangeRestaurantAvailability;
 using Restaurant.Application.Features.Restaurants.Dtos.CreateRestaurant;
 using Restaurant.Application.Features.Restaurants.Dtos.ReviewRestaurant;
+using Restaurant.Application.Features.Restaurants.Dtos.SearchRestaurants;
 using Restaurant.Application.Features.Restaurants.Dtos.UpdateRestaurant;
 using Restaurant.Application.Features.Restaurants.Queries.GetAllRestaurants;
+using Restaurant.Application.Features.Restaurants.Queries.SearchRestaurants;
 
 namespace Restaurant.API.Controllers;
 
@@ -163,6 +165,39 @@ public sealed class RestaurantsController(ISender sender)
             response => OkEnvelope(
                 response,
                 "Restaurant availability changed successfully"),
+            Problem);
+    }
+    [AllowAnonymous]
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchRestaurants(
+        [FromQuery] string? name,
+        [FromQuery] string? city,
+        [FromQuery] Restaurant.Domain.Restaurants.Enums.CuisineType? cuisineType,
+        [FromQuery] Guid? categoryId,
+        [FromQuery] Restaurant.Domain.Restaurants.Enums.RestaurantStatus? status,
+        [FromQuery] decimal? minRating,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new SearchRestaurantsRequest
+        {
+            Name = name,
+            City = city,
+            CuisineType = cuisineType,
+            CategoryId = categoryId,
+            Status = status,
+            MinRating = minRating,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await sender.Send(
+            new SearchRestaurantsQuery(request),
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            r => OkEnvelope(r, "Restaurants searched successfully"),
             Problem);
     }
 }

@@ -71,6 +71,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAddOnRepository, AddOnRepository>();
 
+        services.AddScoped<IDeliveryZoneRepository, DeliveryZoneRepository>();
 
         return services;
     }

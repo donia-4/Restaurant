@@ -1,6 +1,8 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Restaurant.API.Dtos;
+using Restaurant.Application.Common.Dtos;
 using Restaurant.Application.Features.Branches.Queries.GetRestaurantBranches;
 using Restaurant.Application.Features.Categories.Queries.GetRestaurantCategories;
 using Restaurant.Application.Features.Foods.Queries.GetRestaurantMenu;
@@ -16,6 +18,7 @@ using Restaurant.Application.Features.Restaurants.Dtos.SearchRestaurants;
 using Restaurant.Application.Features.Restaurants.Dtos.UpdateRestaurant;
 using Restaurant.Application.Features.Restaurants.Queries.GetAllRestaurants;
 using Restaurant.Application.Features.Restaurants.Queries.SearchRestaurants;
+using Restaurant.Domain.Results;
 
 namespace Restaurant.API.Controllers;
 
@@ -23,13 +26,44 @@ namespace Restaurant.API.Controllers;
 public sealed class RestaurantsController(ISender sender)
     : ApiController
 {
+    private const long MaxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+    private static readonly HashSet<string> AllowedExtensions =
+        new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".jfif" };
+
     [AllowAnonymous]
     [HttpPost("request")]
     public async Task<IActionResult> CreateRestaurant(
-        [FromForm] CreateRestaurantRequest request,
+        [FromForm] CreateRestaurantApiRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new CreateRestaurantCommand(request);
+        if (request.Logo is not null && !IsValidImage(request.Logo))
+        {
+            return Problem(new List<Error>
+            {
+                Error.Validation("Logo.Invalid", "Logo must be ≤ 5 MB and of type: .jpg, .jpeg, .png, .jfif")
+            });
+        }
+
+        if (request.CoverImage is not null && !IsValidImage(request.CoverImage))
+        {
+            return Problem(new List<Error>
+            {
+                Error.Validation("CoverImage.Invalid", "Cover image must be ≤ 5 MB and of type: .jpg, .jpeg, .png, .jfif")
+            });
+        }
+
+        var appRequest = new CreateRestaurantRequest(
+            request.OwnerId,
+            request.Name,
+            request.Description,
+            ToFileUpload(request.Logo),
+            ToFileUpload(request.CoverImage),
+            request.Phone,
+            request.Email,
+            request.CuisineType,
+            request.Address);
+
+        var command = new CreateRestaurantCommand(appRequest);
 
         var result = await sender.Send(
             command,
@@ -62,10 +96,26 @@ public sealed class RestaurantsController(ISender sender)
 
     [HttpPatch("{restaurantId:guid}")]
     public async Task<IActionResult> UpdateRestaurant(
-    Guid restaurantId,
-    [FromForm] UpdateRestaurantRequest request,
-    CancellationToken cancellationToken)
+        Guid restaurantId,
+        [FromForm] UpdateRestaurantApiRequest request,
+        CancellationToken cancellationToken)
     {
+        if (request.Logo is not null && !IsValidImage(request.Logo))
+        {
+            return Problem(new List<Error>
+            {
+                Error.Validation("Logo.Invalid", "Logo must be ≤ 5 MB and of type: .jpg, .jpeg, .png, .jfif")
+            });
+        }
+
+        if (request.CoverImage is not null && !IsValidImage(request.CoverImage))
+        {
+            return Problem(new List<Error>
+            {
+                Error.Validation("CoverImage.Invalid", "Cover image must be ≤ 5 MB and of type: .jpg, .jpeg, .png, .jfif")
+            });
+        }
+
         var command = new UpdateRestaurantCommand(
             restaurantId,
             request.Name,
@@ -73,7 +123,9 @@ public sealed class RestaurantsController(ISender sender)
             request.Phone,
             request.Email,
             request.CuisineType,
-            request.Address);
+            request.Address,
+            ToFileUpload(request.Logo),
+            ToFileUpload(request.CoverImage));
 
         var result = await sender.Send(
             command,
@@ -89,8 +141,8 @@ public sealed class RestaurantsController(ISender sender)
     [AllowAnonymous]
     [HttpGet("{restaurantId:guid}/branches")]
     public async Task<IActionResult> GetRestaurantBranches(
-    Guid restaurantId,
-    CancellationToken cancellationToken)
+        Guid restaurantId,
+        CancellationToken cancellationToken)
     {
         var result = await sender.Send(
             new GetRestaurantBranchesQuery(restaurantId),
@@ -110,11 +162,12 @@ public sealed class RestaurantsController(ISender sender)
         var result = await sender.Send(new GetRestaurantMenuQuery(restaurantId), cancellationToken);
         return result.Match<IActionResult>(r => OkEnvelope(r, "Restaurant menu retrieved successfully"), Problem);
     }
+
     [AllowAnonymous]
     [HttpGet("{restaurantId:guid}/categories")]
     public async Task<IActionResult> GetRestaurantCategories(
-    Guid restaurantId,
-    CancellationToken cancellationToken)
+        Guid restaurantId,
+        CancellationToken cancellationToken)
     {
         var result = await sender.Send(
             new GetRestaurantCategoriesQuery(restaurantId),
@@ -126,9 +179,7 @@ public sealed class RestaurantsController(ISender sender)
                 "Categories retrieved successfully"),
             Problem);
     }
-    // ==========================================
-    // REVIEW (Admin: Approve / Reject / Request Modification)
-    // ==========================================
+
     [AllowAnonymous]
     [HttpPut("{restaurantId:guid}/review")]
     public async Task<IActionResult> ReviewRestaurant(
@@ -147,9 +198,6 @@ public sealed class RestaurantsController(ISender sender)
             Problem);
     }
 
-    // ==========================================
-    // CHANGE AVAILABILITY (Owner: Open / Closed / TemporarilyClosed / UnderMaintenance)
-    // ==========================================
     [AllowAnonymous]
     [HttpPut("{restaurantId:guid}/availability")]
     public async Task<IActionResult> ChangeRestaurantAvailability(
@@ -167,6 +215,7 @@ public sealed class RestaurantsController(ISender sender)
                 "Restaurant availability changed successfully"),
             Problem);
     }
+
     [AllowAnonymous]
     [HttpGet("search")]
     public async Task<IActionResult> SearchRestaurants(
@@ -199,5 +248,24 @@ public sealed class RestaurantsController(ISender sender)
         return result.Match<IActionResult>(
             r => OkEnvelope(r, "Restaurants searched successfully"),
             Problem);
+    }
+
+    private static bool IsValidImage(IFormFile file)
+    {
+        if (file.Length > MaxFileSizeBytes)
+            return false;
+
+        var extension = Path.GetExtension(file.FileName);
+        return AllowedExtensions.Contains(extension);
+    }
+
+    private static FileUpload? ToFileUpload(IFormFile? file)
+    {
+        if (file is null) return null;
+
+        return new FileUpload(
+            file.OpenReadStream(),
+            file.FileName,
+            file.ContentType);
     }
 }

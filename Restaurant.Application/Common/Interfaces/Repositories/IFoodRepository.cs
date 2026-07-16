@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Restaurant.Application.Common.Models;
 using Restaurant.Domain.AddOns;
 using Restaurant.Domain.Foods;
 
@@ -18,5 +19,14 @@ namespace Restaurant.Application.Common.Interfaces.Repositories
         void Remove(Food food);
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
         Task<AddOn?> GetAddOnByIdAsync(Guid addOnId, CancellationToken cancellationToken = default);
+        Task<PaginatedList<Food>> SearchAsync(
+            Guid restaurantId,
+            string? name,
+            string? categoryName,
+            decimal? minPrice,
+            decimal? maxPrice,
+            int pageNumber,
+            int pageSize,
+            CancellationToken cancellationToken = default);
     }
 }

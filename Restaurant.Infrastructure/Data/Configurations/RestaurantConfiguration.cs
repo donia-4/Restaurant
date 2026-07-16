@@ -18,7 +18,9 @@ public sealed class RestaurantConfiguration : IEntityTypeConfiguration<Restauran
         builder.Property(x => x.Email).HasMaxLength(100).IsRequired();
         builder.Property(x => x.Address).HasMaxLength(300).IsRequired();
         builder.Property(x => x.Logo).HasMaxLength(500);
+        builder.Property(x => x.LogoPublicId).HasMaxLength(500);
         builder.Property(x => x.CoverImage).HasMaxLength(500);
+        builder.Property(x => x.CoverImagePublicId).HasMaxLength(500);
         builder.Property(x => x.CuisineType).HasConversion<string>().HasMaxLength(50);
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
         builder.Property(x => x.AverageRating).HasPrecision(3, 2);

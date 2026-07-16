@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Restaurant.Application.Common.Interfaces.Repositories;
+using Restaurant.Application.Common.Models;
 using Restaurant.Domain.AddOns;
 using Restaurant.Domain.Foods;
 using Restaurant.Infrastructure.Data;
@@ -71,6 +72,37 @@ public sealed class FoodRepository(RestaurantDbContext context)
         CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);
+    }
+    public async Task<PaginatedList<Food>> SearchAsync(
+        Guid restaurantId,
+        string? name,
+        string? categoryName,
+        decimal? minPrice,
+        decimal? maxPrice,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = context.Foods
+            .AsNoTracking()
+            .Include(f => f.Category)
+            .Where(f => f.RestaurantId == restaurantId && f.IsVisible);
+
+        if (!string.IsNullOrWhiteSpace(name))
+            query = query.Where(f => f.Name.Contains(name));
+
+        if (!string.IsNullOrWhiteSpace(categoryName))
+            query = query.Where(f => f.Category != null && f.Category.Name.Contains(categoryName));
+
+        if (minPrice.HasValue)
+            query = query.Where(f => f.Price >= minPrice.Value);
+
+        if (maxPrice.HasValue)
+            query = query.Where(f => f.Price <= maxPrice.Value);
+
+        query = query.OrderBy(f => f.Name);
+
+        return await PaginatedList<Food>.CreateAsync(query, pageNumber, pageSize, cancellationToken);
     }
     public async Task<AddOn?> GetAddOnByIdAsync(Guid addOnId, CancellationToken cancellationToken = default)
     {

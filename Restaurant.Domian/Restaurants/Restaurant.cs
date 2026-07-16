@@ -25,7 +25,10 @@ public sealed class Restaurant : AuditableEntity
     public string Name { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
     public string? Logo { get; private set; }
+    public string? LogoPublicId { get; private set; }
+
     public string? CoverImage { get; private set; }
+    public string? CoverImagePublicId { get; private set; }
     public string Phone { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
     public CuisineType CuisineType { get; private set; }
@@ -50,7 +53,7 @@ public sealed class Restaurant : AuditableEntity
     private Restaurant() { }
 
     private Restaurant(Guid id, Guid ownerId, string name, string description, string phone,
-        string email, CuisineType cuisineType, string address, string? logo, string? coverImage)
+        string email, CuisineType cuisineType, string address, string? logo,string? logoPublicId,string? coverImage, string? coverImagePublicId)
         : base(id)
     {
         OwnerId = ownerId;
@@ -61,14 +64,16 @@ public sealed class Restaurant : AuditableEntity
         CuisineType = cuisineType;
         Address = address;
         Logo = logo;
+        LogoPublicId = logoPublicId;
         CoverImage = coverImage;
+        CoverImagePublicId = coverImagePublicId;
         Status = RestaurantStatus.Pending;
     }
 
     // FR-01: إنشاء مطعم
     public static Result<Restaurant> Create(Guid id, Guid ownerId, string name, string description,
         string phone, string email, CuisineType cuisineType, string address,
-        string? logo = null, string? coverImage = null)
+        string? logo = null, string? logoPublicId = null, string? coverImage = null, string? coverImagePublicId = null)
     {
         if (ownerId == Guid.Empty) return RestaurantErrors.InvalidOwner;
         if (string.IsNullOrWhiteSpace(name)) return RestaurantErrors.InvalidName; // BR-01
@@ -76,7 +81,7 @@ public sealed class Restaurant : AuditableEntity
         if (string.IsNullOrWhiteSpace(email)) return RestaurantErrors.InvalidEmail;
         if (string.IsNullOrWhiteSpace(address)) return RestaurantErrors.InvalidAddress;
 
-        var restaurant = new Restaurant(id,ownerId,name.Trim(),description.Trim(),phone.Trim(),email.Trim(),cuisineType,address.Trim(),logo,coverImage);
+        var restaurant = new Restaurant(id,ownerId,name.Trim(),description.Trim(),phone.Trim(),email.Trim(),cuisineType,address.Trim(),logo,logoPublicId,coverImage,coverImagePublicId);
 
         restaurant.AddDomainEvent(
             new RestaurantRequestedEvent(
@@ -88,7 +93,10 @@ public sealed class Restaurant : AuditableEntity
     }
 
     // FR-03: تعديل البيانات
-    public Result<Updated> UpdateDetails(string? name,string? description,string? phone,string? email,CuisineType? cuisineType,string? address)
+    public Result<Updated> UpdateDetails(
+        string? name,string? description,string? phone,string? email,
+        CuisineType? cuisineType,string? address, string? logo = null,
+        string? logoPublicId = null,string? coverImage = null,string? coverImagePublicId = null)
     {
         if (name is not null)
             Name = name.Trim();
@@ -107,6 +115,18 @@ public sealed class Restaurant : AuditableEntity
 
         if (address is not null)
             Address = address.Trim();
+
+        if (logo is not null)
+        {
+            Logo = logo;
+            LogoPublicId = logoPublicId;
+        }
+
+        if (coverImage is not null)
+        {
+            CoverImage = coverImage;
+            CoverImagePublicId = coverImagePublicId;
+        }
 
         return Result.Updated;
     }

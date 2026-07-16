@@ -34,7 +34,9 @@ namespace Restaurant.Application.Features.Restaurants.Queries.GetAllRestaurants
                     restaurant.CuisineType,
                     restaurant.Address,
                     restaurant.Status,
-                    restaurant.IsApproved))
+                    restaurant.IsApproved,
+                    restaurant.AverageRating,
+                    restaurant.TotalReviews))
                 .ToList();
 
             return response;

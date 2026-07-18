@@ -1,5 +1,7 @@
 ﻿using MediatR;
+using Restaurant.Application.Common.Dtos;
 using Restaurant.Application.Common.Interfaces.Repositories;
+using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Application.Features.Restaurants.Commands.CreateRestaurant;
 using Restaurant.Application.Features.Restaurants.Dtos.CreateRestaurant;
 using Restaurant.Domain.Results;
@@ -7,7 +9,8 @@ using Restaurant.Domain.Results;
 namespace Restaurant.Application.Features.Restaurants.CreateRestaurant;
 
 public sealed class CreateRestaurantCommandHandler(
-    IRestaurantRepository restaurantRepository)
+    IRestaurantRepository restaurantRepository,
+    IFileService fileService)
     : IRequestHandler<
         CreateRestaurantCommand,
         Result<CreateRestaurantResponse>>
@@ -18,6 +21,22 @@ public sealed class CreateRestaurantCommandHandler(
     {
         var request = command.Request;
 
+        UploadFileResponse? logo = null;
+        if (request.Logo is not null)
+        {
+            logo = await fileService.UploadAsync(
+                request.Logo,
+                cancellationToken);
+        }
+
+        UploadFileResponse? cover = null;
+        if (request.CoverImage is not null)
+        {
+            cover = await fileService.UploadAsync(
+                request.CoverImage,
+                cancellationToken);
+        }
+
         var restaurantResult =
             Domain.Restaurants.Restaurant.Create(
                 Guid.NewGuid(),
@@ -27,7 +46,11 @@ public sealed class CreateRestaurantCommandHandler(
                 request.Phone,
                 request.Email,
                 request.CuisineType,
-                request.Address);
+                request.Address,
+                logo?.Url,
+                logo?.PublicId,
+                cover?.Url,
+                cover?.PublicId);
 
         if (restaurantResult.IsError)
         {
@@ -52,6 +75,8 @@ public sealed class CreateRestaurantCommandHandler(
             restaurant.Email,
             restaurant.CuisineType,
             restaurant.Address,
+            restaurant.Logo,
+            restaurant.CoverImage,
             restaurant.Status.ToString(),
             restaurant.IsApproved);
     }

@@ -18,5 +18,7 @@ namespace Restaurant.Application.Features.Restaurants.Dtos.GetAllRestaurants
         CuisineType CuisineType,
         string Address,
         RestaurantStatus Status,
-        bool IsApproved);
+        bool IsApproved,
+        decimal AverageRating,
+        int TotalReviews);
 }

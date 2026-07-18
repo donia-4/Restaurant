@@ -1,14 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CloudinaryDotNet;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Restaurant.Application.Common.Interfaces.Services;
+using Microsoft.Extensions.Options;
 using Restaurant.Application.Common.Interfaces.Repositories;
-using Restaurant.Infrastructure.Services;
+using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Infrastructure.Data;
 using Restaurant.Infrastructure.Data.Interceptors;
 using Restaurant.Infrastructure.Repositories;
+using Restaurant.Infrastructure.Services;
+using Restaurant.Infrastructure.Settings;
 
 namespace Restaurant.Infrastructure;
 
@@ -21,7 +24,32 @@ public static class DependencyInjection
         services
             .AddDatabase(configuration)
             .AddCaching()
+            .AddCloudinary(configuration)
             .AddRepositories();
+
+        return services;
+    }
+
+    private static IServiceCollection AddCloudinary(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<CloudinarySettings>(
+            configuration.GetSection("Cloudinary"));
+
+        services.AddSingleton(sp =>
+        {
+            var settings = sp
+                .GetRequiredService<IOptions<CloudinarySettings>>()
+                .Value;
+
+            var account = new Account(
+                settings.CloudName,
+                settings.ApiKey,
+                settings.ApiSecret);
+
+            return new Cloudinary(account);
+        });
 
         return services;
     }
@@ -54,6 +82,8 @@ public static class DependencyInjection
         services.AddHybridCache();
 
         services.AddScoped<ICacheService, HybridCacheService>();
+
+        services.AddScoped<IFileService, CloudinaryFileService>();
 
         return services;
     }

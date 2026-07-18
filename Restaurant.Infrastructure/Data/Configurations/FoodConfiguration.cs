@@ -15,6 +15,7 @@ public sealed class FoodConfiguration : IEntityTypeConfiguration<Food>
         builder.Property(x => x.Description).HasMaxLength(1000);
         builder.Property(x => x.Price).HasPrecision(18, 2);
         builder.Property(x => x.Image).HasMaxLength(500);
+        builder.Property(x => x.ImagePublicId).HasMaxLength(500);
         builder.Property(x => x.PreparationTimeMinutes).HasDefaultValue(0);
         builder.Property(x => x.IsAvailable).HasDefaultValue(true);
         builder.Property(x => x.IsVisible).HasDefaultValue(true);

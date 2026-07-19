@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Restaurant.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using Restaurant.Infrastructure.Data;
 namespace Restaurant.Infrastructure.Migrations
 {
     [DbContext(typeof(RestaurantDbContext))]
-    partial class RestaurantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260719111241_added_soft_delete")]
+    partial class added_soft_delete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -412,48 +415,6 @@ namespace Restaurant.Infrastructure.Migrations
                     b.ToTable("RestaurantImages", (string)null);
                 });
 
-            modelBuilder.Entity("Restaurant.Domain.Reviews.Review", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Comment")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<DateTimeOffset>("LastModifiedUtc")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RestaurantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RestaurantId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("RestaurantId", "UserId", "IsDeleted")
-                        .IsUnique();
-
-                    b.ToTable("Reviews", (string)null);
-                });
-
             modelBuilder.Entity("Restaurant.Domain.WorkingHours.WorkingHour", b =>
                 {
                     b.Property<Guid>("Id")
@@ -579,17 +540,6 @@ namespace Restaurant.Infrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("Restaurant.Domain.Reviews.Review", b =>
-                {
-                    b.HasOne("Restaurant.Domain.Restaurants.Restaurant", "Restaurant")
-                        .WithMany("Reviews")
-                        .HasForeignKey("RestaurantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Restaurant");
-                });
-
             modelBuilder.Entity("Restaurant.Domain.WorkingHours.WorkingHour", b =>
                 {
                     b.HasOne("Restaurant.Domain.Branches.Branch", "Branch")
@@ -633,8 +583,6 @@ namespace Restaurant.Infrastructure.Migrations
                     b.Navigation("Foods");
 
                     b.Navigation("Images");
-
-                    b.Navigation("Reviews");
 
                     b.Navigation("WorkingHours");
                 });

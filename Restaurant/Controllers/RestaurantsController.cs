@@ -82,11 +82,16 @@ public sealed class RestaurantsController(ISender sender)
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAllRestaurants(
-        CancellationToken cancellationToken)
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(
-            new GetAllRestaurantsQuery(),
+            new GetAllRestaurantsQuery(
+                pageNumber,
+                pageSize),
             cancellationToken);
+
         return result.Match<IActionResult>(
             response => OkEnvelope(
                 response,
@@ -139,13 +144,18 @@ public sealed class RestaurantsController(ISender sender)
     }
 
     [AllowAnonymous]
-    [HttpGet("{restaurantId:guid}/branches")]
+    [HttpGet("branches")]
     public async Task<IActionResult> GetRestaurantBranches(
         Guid restaurantId,
-        CancellationToken cancellationToken)
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(
-            new GetRestaurantBranchesQuery(restaurantId),
+            new GetRestaurantBranchesQuery(
+                restaurantId,
+                pageNumber,
+                pageSize),
             cancellationToken);
 
         return result.Match<IActionResult>(
@@ -157,20 +167,39 @@ public sealed class RestaurantsController(ISender sender)
 
     [AllowAnonymous]
     [HttpGet("{restaurantId:guid}/menu")]
-    public async Task<IActionResult> GetRestaurantMenu(Guid restaurantId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetRestaurantMenu(
+        Guid restaurantId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await sender.Send(new GetRestaurantMenuQuery(restaurantId), cancellationToken);
-        return result.Match<IActionResult>(r => OkEnvelope(r, "Restaurant menu retrieved successfully"), Problem);
+        var result = await sender.Send(
+            new GetRestaurantMenuQuery(
+                restaurantId,
+                pageNumber,
+                pageSize),
+            cancellationToken);
+
+        return result.Match<IActionResult>(
+            response => OkEnvelope(
+                response,
+                "Restaurant menu retrieved successfully"),
+            Problem);
     }
 
     [AllowAnonymous]
     [HttpGet("{restaurantId:guid}/categories")]
     public async Task<IActionResult> GetRestaurantCategories(
         Guid restaurantId,
-        CancellationToken cancellationToken)
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(
-            new GetRestaurantCategoriesQuery(restaurantId),
+            new GetRestaurantCategoriesQuery(
+                restaurantId,
+                pageNumber,
+                pageSize),
             cancellationToken);
 
         return result.Match<IActionResult>(

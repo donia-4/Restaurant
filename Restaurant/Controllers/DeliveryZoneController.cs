@@ -48,14 +48,21 @@ namespace Restaurant.API.Controllers
         [HttpGet("~/api/branches/{branchId:guid}/delivery-zones")]
         public async Task<IActionResult> GetBranchDeliveryZones(
             Guid branchId,
-            CancellationToken cancellationToken)
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            CancellationToken cancellationToken = default)
         {
             var result = await sender.Send(
-                new GetBranchDeliveryZonesQuery(branchId),
+                new GetBranchDeliveryZonesQuery(
+                    branchId,
+                    pageNumber,
+                    pageSize),
                 cancellationToken);
 
             return result.Match<IActionResult>(
-                r => OkEnvelope(r, "Branch delivery zones retrieved successfully"),
+                response => OkEnvelope(
+                    response,
+                    "Branch delivery zones retrieved successfully"),
                 Problem);
         }
 

@@ -16,4 +16,6 @@ public static class RestaurantErrors
     public static readonly Error HasActiveOrders = Error.Conflict("Restaurant.Orders.Active", "Cannot delete restaurant with active orders."); // BR-03
     public static readonly Error Unauthorized = Error.Unauthorized("Restaurant.Unauthorized", "You are not authorized to manage this restaurant.");
     public static readonly Error InvalidReviewStatus = Error.Conflict(code: "Restaurant.Status.InvalidReviewStatus",description: "Restaurant cannot be reviewed in its current status.");
+    public static readonly Error DuplicateName = Error.Conflict("Restaurant.Name.Duplicate", "A restaurant with this name already exists.");
+
 }

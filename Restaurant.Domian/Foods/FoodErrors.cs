@@ -11,4 +11,6 @@ public static class FoodErrors
     public static readonly Error InActiveOrder = Error.Conflict("Food.Order.Active", "Cannot delete item used in active order."); // BR-05
     public static readonly Error NotFound = Error.NotFound("Food.NotFound", "Food was not found.");
     public static readonly Error NotAvailable = Error.Conflict("Food.NotAvailable", "This item is currently not available."); // BR-10
+    public static readonly Error DuplicateName = Error.Conflict("Food.Name.Duplicate", "A menu item with this name already exists for this branch.");
+
 }

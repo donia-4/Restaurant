@@ -34,7 +34,8 @@ namespace Restaurant.Infrastructure.Repositories
 
         public void Remove(AddOn addOn)
         {
-            _context.AddOns.Remove(addOn);
+            addOn.IsDeleted = true;
+            _context.AddOns.Update(addOn);
         }
 
         public async Task SaveChangesAsync(

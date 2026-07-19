@@ -6,6 +6,7 @@ using Restaurant.Domain.Foods;
 using Restaurant.Domain.Restaurants.Enums;
 using Restaurant.Domain.Restaurants.Events;
 using Restaurant.Domain.Results;
+using Restaurant.Domain.Reviews;
 using Restaurant.Domain.WorkingHours;
 using Restaurant.Domian.Restaurants.Events;
 
@@ -19,6 +20,7 @@ public sealed class Restaurant : AuditableEntity
     private readonly List<RestaurantImage> _images = [];
     private readonly List<WorkingHour> _workingHours = [];
     private readonly List<DeliveryZone> _deliveryZones = [];
+    private readonly List<Review> _reviews = [];
 
     // FR-01: بيانات المطعم الأساسية
     public Guid OwnerId { get; private set; }
@@ -49,6 +51,7 @@ public sealed class Restaurant : AuditableEntity
     public IReadOnlyCollection<RestaurantImage> Images => _images;
     public IReadOnlyCollection<WorkingHour> WorkingHours => _workingHours;
     public IReadOnlyCollection<DeliveryZone> DeliveryZones => _deliveryZones;
+    public IReadOnlyCollection<Review> Reviews => _reviews;
 
     private Restaurant() { }
 

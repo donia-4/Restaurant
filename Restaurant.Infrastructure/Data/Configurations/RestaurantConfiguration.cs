@@ -31,7 +31,7 @@ public sealed class RestaurantConfiguration : IEntityTypeConfiguration<Restauran
         builder.HasMany(x => x.Categories).WithOne(x => x.Restaurant).HasForeignKey(x => x.RestaurantId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(x => x.Foods).WithOne(x => x.Restaurant).HasForeignKey(x => x.RestaurantId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(x => x.Images).WithOne(x => x.Restaurant).HasForeignKey(x => x.RestaurantId).OnDelete(DeleteBehavior.Cascade);
-
+        builder.HasMany(x => x.Reviews).WithOne(x => x.Restaurant).HasForeignKey(x => x.RestaurantId).OnDelete(DeleteBehavior.Cascade);
         // Indexes
         builder.HasIndex(x => x.OwnerId);
         builder.HasIndex(x => x.Status);

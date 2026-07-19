@@ -103,6 +103,8 @@ public static class DependencyInjection
 
         services.AddScoped<IDeliveryZoneRepository, DeliveryZoneRepository>();
 
+        services.AddScoped<IReviewRepository, ReviewRepository>();
+
         return services;
     }
 }

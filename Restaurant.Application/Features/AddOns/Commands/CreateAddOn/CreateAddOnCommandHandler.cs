@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Features.AddOns.Dtos.CreateAddOn;
 using Restaurant.Domain.AddOns;
@@ -14,13 +15,18 @@ namespace Restaurant.Application.Features.AddOns.Commands.CreateAddOn
 {
     public sealed class CreateAddOnCommandHandler(
     IFoodRepository foodRepository,
-    IAddOnRepository addOnRepository)
+    IAddOnRepository addOnRepository,
+    ILogger<CreateAddOnCommandHandler> logger)
     : IRequestHandler<CreateAddOnCommand, Result<CreateAddOnResponse>>
     {
         public async Task<Result<CreateAddOnResponse>> Handle(
             CreateAddOnCommand command,
             CancellationToken cancellationToken)
         {
+            logger.LogInformation(
+                "Processing CreateAddOnCommand for food ID: {FoodId}",
+                command.Request.FoodId);
+
             var request = command.Request;
 
             var food = await foodRepository.GetByIdWithAddOnsAsync(
@@ -46,6 +52,8 @@ namespace Restaurant.Application.Features.AddOns.Commands.CreateAddOn
             // Add to DbContext directly via repository (fixes DbConcurrency)
             await addOnRepository.AddAsync(addOn, cancellationToken);
             await addOnRepository.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Successfully created AddOn with ID: {AddOnId}",addOn.Id);
 
             return new CreateAddOnResponse(addOn.Id);
         }

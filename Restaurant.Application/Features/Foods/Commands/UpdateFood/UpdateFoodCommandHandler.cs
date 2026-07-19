@@ -1,10 +1,12 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Dtos;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Application.Features.Foods.Commands.UpdateFood;
 using Restaurant.Application.Features.Foods.Dtos.UpdateFood;
 using Restaurant.Domain.Foods;
+using Restaurant.Domain.Restaurants;
 using Restaurant.Domain.Results;
 
 namespace Restaurant.Application.Features.Foods.Commands.UpdateFood;
@@ -12,7 +14,8 @@ namespace Restaurant.Application.Features.Foods.Commands.UpdateFood;
 public sealed class UpdateFoodCommandHandler(
     IFoodRepository foodRepository,
     ICacheService cacheService,
-    IFileService fileService)
+    IFileService fileService,
+    ILogger<UpdateFoodCommandHandler> logger)
     : IRequestHandler<UpdateFoodCommand, Result<UpdateFoodResponse>>
 {
     private readonly IFoodRepository _foodRepository = foodRepository;
@@ -23,6 +26,10 @@ public sealed class UpdateFoodCommandHandler(
         UpdateFoodCommand command,
         CancellationToken cancellationToken)
     {
+        logger.LogInformation(
+            "Processing UpdateFoodCommand for Food ID: {FoodId}",
+            command.FoodId);
+
         var request = command.Request;
 
         var food = await _foodRepository.GetByIdAsync(
@@ -33,6 +40,11 @@ public sealed class UpdateFoodCommandHandler(
         {
             return FoodErrors.NotFound;
         }
+
+        bool duplicateName = await _foodRepository.ExistsWithTheGivenName(food.Name.ToLower(), cancellationToken);
+
+        if (duplicateName)
+            return FoodErrors.DuplicateName;
 
         UploadFileResponse? image = null;
         if (request.Image is not null)
@@ -70,6 +82,10 @@ public sealed class UpdateFoodCommandHandler(
         await _cacheService.RemoveByTagAsync(
             "foods",
             cancellationToken);
+
+        logger.LogInformation(
+            "Successfully updated Food ID: {FoodId}",
+            food.Id);
 
         return new UpdateFoodResponse(food.Id);
     }

@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Dtos;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
@@ -12,7 +13,8 @@ namespace Restaurant.Application.Features.Restaurants.UpdateRestaurant;
 public sealed class UpdateRestaurantCommandHandler(
     IRestaurantRepository restaurantRepository,
     ICacheService cacheService,
-    IFileService fileService)
+    IFileService fileService,
+    ILogger<UpdateRestaurantCommandHandler> logger)
     : IRequestHandler<
         UpdateRestaurantCommand,
         Result<UpdateRestaurantResponse>>
@@ -30,6 +32,10 @@ public sealed class UpdateRestaurantCommandHandler(
         UpdateRestaurantCommand request,
         CancellationToken cancellationToken)
     {
+        logger.LogInformation(
+            "Processing UpdateRestaurantCommand for Restaurant ID: {RestaurantId}",
+            request.RestaurantId);
+
         var restaurant = await _restaurantRepository.GetByIdAsync(
             request.RestaurantId,
             cancellationToken);
@@ -38,6 +44,11 @@ public sealed class UpdateRestaurantCommandHandler(
         {
             return RestaurantErrors.NotFound;
         }
+
+        bool duplicateName = await restaurantRepository.ExistsWithTheGivenName(restaurant.Name.ToLower(), cancellationToken);
+
+        if (duplicateName)
+            return RestaurantErrors.DuplicateName;
 
         UploadFileResponse? logo = null;
         if (request.Logo is not null)
@@ -78,6 +89,10 @@ public sealed class UpdateRestaurantCommandHandler(
         await _cacheService.RemoveByTagAsync(
             "restaurants",
             cancellationToken);
+
+        logger.LogInformation(
+            "Successfully updated Restaurant ID: {RestaurantId}",
+            request.RestaurantId);
 
         return new UpdateRestaurantResponse(
             restaurant.Id,

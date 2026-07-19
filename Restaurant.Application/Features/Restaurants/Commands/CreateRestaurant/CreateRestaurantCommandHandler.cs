@@ -1,16 +1,19 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Dtos;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Application.Features.Restaurants.Commands.CreateRestaurant;
 using Restaurant.Application.Features.Restaurants.Dtos.CreateRestaurant;
+using Restaurant.Domain.Restaurants;
 using Restaurant.Domain.Results;
 
 namespace Restaurant.Application.Features.Restaurants.CreateRestaurant;
 
 public sealed class CreateRestaurantCommandHandler(
     IRestaurantRepository restaurantRepository,
-    IFileService fileService)
+    IFileService fileService,
+    ILogger<CreateRestaurantCommandHandler> logger)
     : IRequestHandler<
         CreateRestaurantCommand,
         Result<CreateRestaurantResponse>>
@@ -19,7 +22,16 @@ public sealed class CreateRestaurantCommandHandler(
         CreateRestaurantCommand command,
         CancellationToken cancellationToken)
     {
+        logger.LogInformation(
+            "Processing CreateRestaurantCommand for Owner ID: {OwnerId}",
+            command.Request.OwnerId);
+
         var request = command.Request;
+
+        bool duplicateName = await restaurantRepository.ExistsWithTheGivenName(request.Name.ToLower(), cancellationToken);
+
+        if (duplicateName)
+            return RestaurantErrors.DuplicateName;
 
         UploadFileResponse? logo = null;
         if (request.Logo is not null)
@@ -65,6 +77,10 @@ public sealed class CreateRestaurantCommandHandler(
 
         await restaurantRepository.SaveChangesAsync(
             cancellationToken);
+
+        logger.LogInformation(
+            "Restaurant created successfully with ID: {RestaurantId}",
+            restaurant.Id);
 
         return new CreateRestaurantResponse(
             restaurant.Id,

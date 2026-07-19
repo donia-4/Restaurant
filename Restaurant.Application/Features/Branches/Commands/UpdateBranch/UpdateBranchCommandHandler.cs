@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Application.Features.Branches.Dtos.UpdateBranch;
@@ -10,6 +11,7 @@ namespace Restaurant.Application.Features.Branches.Commands.UpdateBranch;
 
 public sealed class UpdateBranchCommandHandler(
     IBranchRepository branchRepository,
+    ILogger<UpdateBranchCommandHandler> logger,
     ICacheService cacheService)
     : IRequestHandler<UpdateBranchCommand, Result<UpdateBranchResponse>>
 {
@@ -20,6 +22,10 @@ public sealed class UpdateBranchCommandHandler(
         UpdateBranchCommand command,
         CancellationToken cancellationToken)
     {
+        logger.LogInformation(
+            "Processing UpdateBranchCommand for Branch ID: {BranchId}",
+            command.BranchId);
+
         var request = command.Request;
 
         var branch = await _branchRepository.GetByIdWithWorkingHoursAsync(
@@ -30,6 +36,10 @@ public sealed class UpdateBranchCommandHandler(
         {
             return BranchErrors.NotFound;
         }
+
+        bool duplicateName = await _branchRepository.ExistsWithTheGivenName(branch.Name.ToLower(), cancellationToken);
+
+        if (duplicateName) return BranchErrors.DuplicateName;
 
         var updateResult = branch.Update(
             request.Name,
@@ -87,6 +97,9 @@ public sealed class UpdateBranchCommandHandler(
         await _cacheService.RemoveByTagAsync(
             "branches",
             cancellationToken);
+
+        logger.LogInformation("Successfully updated Branch ID: {BranchId}",
+            branch.Id);
 
         return new UpdateBranchResponse(branch.Id);
     }

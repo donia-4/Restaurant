@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Application.Features.Branches.Commands.ToggleBranch;
@@ -15,6 +16,7 @@ namespace Restaurant.Application.Features.Branches.Commands.DeactivateBranch
 {
     public sealed class ToggleBranchActiveCommandHandler(
     IBranchRepository branchRepository,
+    ILogger<ToggleBranchActiveCommandHandler> logger,
     ICacheService cacheService)
     : IRequestHandler<ToggleBranchActiveCommand, Result<ToggleBranchActiveResponse>>
     {
@@ -25,6 +27,8 @@ namespace Restaurant.Application.Features.Branches.Commands.DeactivateBranch
             ToggleBranchActiveCommand request,
             CancellationToken cancellationToken)
         {
+            logger.LogInformation("Handling ToggleBranchActiveCommand for BranchId: {BranchId}", request.BranchId);
+
             var branch = await _branchRepository.GetByIdAsync(
                 request.BranchId,
                 cancellationToken);
@@ -55,6 +59,8 @@ namespace Restaurant.Application.Features.Branches.Commands.DeactivateBranch
             await _cacheService.RemoveByTagAsync($"branch:{branch.Id}", cancellationToken);
             await _cacheService.RemoveByTagAsync($"restaurant:{branch.RestaurantId}:branches", cancellationToken);
             await _cacheService.RemoveByTagAsync("branches", cancellationToken);
+
+            logger.LogInformation("Branch {BranchId} active status toggled to {IsActive}", branch.Id, branch.IsActive);
 
             return new ToggleBranchActiveResponse(branch.Id, branch.IsActive);
         }

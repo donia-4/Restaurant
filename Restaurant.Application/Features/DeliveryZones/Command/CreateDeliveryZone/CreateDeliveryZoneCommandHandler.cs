@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Application.Features.DeliveryZones.Dtos.CreateDeliveryZone;
@@ -16,6 +17,7 @@ namespace Restaurant.Application.Features.DeliveryZones.Command.CreateDeliveryZo
     public sealed class CreateDeliveryZoneCommandHandler(
     IDeliveryZoneRepository deliveryZoneRepository,
     IBranchRepository branchRepository,
+    ILogger<CreateDeliveryZoneCommandHandler> logger,
     ICacheService cacheService)
     : IRequestHandler<CreateDeliveryZoneCommand, Result<CreateDeliveryZoneResponse>>
     {
@@ -23,6 +25,11 @@ namespace Restaurant.Application.Features.DeliveryZones.Command.CreateDeliveryZo
             CreateDeliveryZoneCommand command,
             CancellationToken cancellationToken)
         {
+            logger.LogInformation(
+                "Processing CreateDeliveryZoneCommand for Branch ID: {BranchId}, Zone Name: {ZoneName}",
+                command.Request.BranchId,
+                command.Request.ZoneName);
+
             var request = command.Request;
 
             var branch = await branchRepository.GetByIdAsync(
@@ -57,6 +64,11 @@ namespace Restaurant.Application.Features.DeliveryZones.Command.CreateDeliveryZo
             await cacheService.RemoveAsync(
                 $"branch-delivery-zones:{request.BranchId}",
                 cancellationToken);
+
+            logger.LogInformation(
+                "Delivery zone created successfully with ID: {ZoneId} for Branch ID: {BranchId}",
+                zoneResult.Value.Id,
+                request.BranchId);
 
             return new CreateDeliveryZoneResponse(zoneResult.Value.Id);
         }

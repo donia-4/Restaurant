@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Dtos;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
@@ -13,13 +14,18 @@ public sealed class CreateFoodCommandHandler(
     IRestaurantRepository restaurantRepository,
     ICategoryRepository categoryRepository,
     IFoodRepository foodRepository,
-    IFileService fileService)
+    IFileService fileService,
+    ILogger<CreateFoodCommandHandler> logger)
     : IRequestHandler<CreateFoodCommand, Result<CreateFoodResponse>>
 {
     public async Task<Result<CreateFoodResponse>> Handle(
         CreateFoodCommand command,
         CancellationToken cancellationToken)
     {
+        logger.LogInformation(
+            "Processing CreateFoodCommand for Category ID: {CategoryId}",
+            command.Request.CategoryId);
+
         var request = command.Request;
 
         var restaurant = await restaurantRepository.GetByIdAsync(
@@ -39,6 +45,11 @@ public sealed class CreateFoodCommandHandler(
         {
             return Restaurant.Domain.Categories.CategoryErrors.NotFound;
         }
+
+        bool duplicateName = await foodRepository.ExistsWithTheGivenName(request.Name.ToLower(), cancellationToken);
+
+        if (duplicateName)
+            return FoodErrors.DuplicateName;
 
         UploadFileResponse? image = null;
         if (request.Image is not null)
@@ -76,6 +87,11 @@ public sealed class CreateFoodCommandHandler(
             cancellationToken);
 
         await foodRepository.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Successfully created Food with ID: {FoodId} for Category ID: {CategoryId}",
+            foodResult.Value.Id,
+            command.Request.CategoryId);
 
         return new CreateFoodResponse(foodResult.Value.Id);
     }

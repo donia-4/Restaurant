@@ -14,6 +14,8 @@ namespace Restaurant.Application.Common.Interfaces.Repositories
         Task<Category?> GetByIdWithFoodsAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Category>> GetByRestaurantIdAsync(Guid restaurantId, CancellationToken cancellationToken = default);
         void Remove(Category category);
+        Task<bool> ExistsWithTheGivenName(string name, CancellationToken cancellationToken = default);
+        IQueryable<Category> GetByRestaurantId(Guid restaurantId); 
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 

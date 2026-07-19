@@ -1,4 +1,5 @@
-﻿using Restaurant.Domain.Restaurants;
+﻿using Restaurant.Domain.Branches;
+using Restaurant.Domain.Restaurants;
 using Restaurant.Domain.Restaurants.Enums;
 
 namespace Restaurant.Application.Common.Interfaces.Repositories;
@@ -13,6 +14,8 @@ public interface IRestaurantRepository
         Guid id,
         CancellationToken cancellationToken = default);
 
+    Task<bool> ExistsWithTheGivenName(string name,CancellationToken cancellationToken = default);
+
     Task<List<Domain.Restaurants.Restaurant>> GetAllAsync(CancellationToken cancellationToken = default);
 
     IQueryable<Domain.Restaurants.Restaurant> Search(
@@ -22,6 +25,8 @@ public interface IRestaurantRepository
         Guid? categoryId,
         RestaurantStatus? status,
         decimal? minRating);
+    void Remove(Domain.Restaurants.Restaurant restaurant);
+    Task UpdateRatingAsync(Guid restaurantId,CancellationToken cancellationToken = default);
     Task SaveChangesAsync(
         CancellationToken cancellationToken = default);
 

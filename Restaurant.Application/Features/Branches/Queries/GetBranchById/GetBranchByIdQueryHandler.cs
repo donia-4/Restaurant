@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Features.Branches.Dtos.GetBranchById;
 using Restaurant.Application.Features.Branches.Dtos.WorkingHours;
@@ -13,7 +14,7 @@ using Restaurant.Domain.Results;
 namespace Restaurant.Application.Features.Branches.Queries.GetBranchById;
 
 public sealed class GetBranchByIdQueryHandler(
-    IBranchRepository branchRepository)
+    IBranchRepository branchRepository,ILogger<GetBranchByIdQueryHandler> logger)
     : IRequestHandler<GetBranchByIdQuery, Result<BranchResponse>>
 {
     private readonly IBranchRepository _branchRepository = branchRepository;
@@ -22,6 +23,10 @@ public sealed class GetBranchByIdQueryHandler(
         GetBranchByIdQuery request,
         CancellationToken cancellationToken)
     {
+        logger.LogInformation(
+            "Processing GetBranchByIdQuery for Branch ID: {BranchId}",
+            request.BranchId);
+
         var branch = await _branchRepository.GetByIdWithWorkingHoursAsync(
             request.BranchId,
             cancellationToken);
@@ -46,6 +51,11 @@ public sealed class GetBranchByIdQueryHandler(
                 wh.OpenTime,
                 wh.CloseTime,
                 wh.IsClosed)).ToList());
+
+        logger.LogInformation(
+            "Successfully retrieved Branch ID: {BranchId} with {WorkingHoursCount} working hours",
+            branch.Id,
+            branch.WorkingHours.Count);
 
         return response;
     }

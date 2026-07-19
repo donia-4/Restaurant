@@ -1,21 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Restaurant.Application.Common.Interfaces;
+﻿using Restaurant.Application.Common.Interfaces;
+using Restaurant.Application.Common.Models;
 using Restaurant.Application.Features.Restaurants.Dtos.GetAllRestaurants;
 using Restaurant.Domain.Results;
 
-namespace Restaurant.Application.Features.Restaurants.Queries.GetAllRestaurants
+namespace Restaurant.Application.Features.Restaurants.Queries.GetAllRestaurants;
+
+public sealed record GetAllRestaurantsQuery(
+    int PageNumber = 1,
+    int PageSize = 10)
+    : ICachedQuery<Result<PaginatedList<GetAllRestaurantsResponse>>>
 {
-    public sealed record GetAllRestaurantsQuery
-    : ICachedQuery<Result<List<GetAllRestaurantsResponse>>>
-    {
-        public string CacheKey => "restaurants:all";
+    public string CacheKey => $"restaurants:all:{PageNumber}:{PageSize}";
 
-        public string[] Tags => ["restaurants"];
+    public string[] Tags => ["restaurants"];
 
-        public TimeSpan Expiration => TimeSpan.FromMinutes(10);
-    }
+    public TimeSpan Expiration => TimeSpan.FromMinutes(10);
 }

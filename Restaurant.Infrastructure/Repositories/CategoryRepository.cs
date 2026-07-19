@@ -52,7 +52,21 @@ public sealed class CategoryRepository(RestaurantDbContext context)
 
     public void Remove(Category category)
     {
-        _context.Categories.Remove(category);
+        category.IsDeleted = true;
+        _context.Categories.Update(category);   
+    }
+    public async Task<bool> ExistsWithTheGivenName(string name, CancellationToken cancellationToken = default)
+    {
+        return await _context.Categories.AnyAsync(c => c.Name.ToLower() == name, cancellationToken);
+    }
+
+    public IQueryable<Category> GetByRestaurantId(Guid restaurantId)
+    {
+        return _context.Categories
+            .AsNoTracking()
+            .Include(c => c.Foods)
+            .Where(c => c.RestaurantId == restaurantId)
+            .OrderBy(c => c.DisplayOrder);
     }
 
     public async Task SaveChangesAsync(

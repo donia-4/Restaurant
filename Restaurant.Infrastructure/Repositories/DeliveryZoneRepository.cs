@@ -61,7 +61,8 @@ namespace Restaurant.Infrastructure.Repositories
             DeliveryZone zone,
             CancellationToken cancellationToken = default)
         {
-            _context.DeliveryZones.Remove(zone);
+            zone.IsDeleted = true;
+            _context.DeliveryZones.Update(zone);
             return Task.CompletedTask;
         }
 

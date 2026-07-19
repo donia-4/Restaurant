@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Models;
 using Restaurant.Application.Features.Restaurants.Dtos.SearchRestaurants;
@@ -12,13 +13,17 @@ using Restaurant.Domain.Results;
 namespace Restaurant.Application.Features.Restaurants.Queries.SearchRestaurants
 {
     public sealed class SearchRestaurantsQueryHandler(
-    IRestaurantRepository restaurantRepository)
+    IRestaurantRepository restaurantRepository, ILogger<SearchRestaurantsQueryHandler> logger)
     : IRequestHandler<SearchRestaurantsQuery, Result<PaginatedList<SearchRestaurantResponse>>>
     {
         public async Task<Result<PaginatedList<SearchRestaurantResponse>>> Handle(
             SearchRestaurantsQuery query,
             CancellationToken cancellationToken)
         {
+            logger.LogInformation(
+                "Processing SearchRestaurantsQuery with parameters: {@Request}",
+                query.Request);
+
             var request = query.Request;
 
             // Search() returns IQueryable<Restaurant>
@@ -54,6 +59,12 @@ namespace Restaurant.Application.Features.Restaurants.Queries.SearchRestaurants
                 request.PageNumber,
                 request.PageSize,
                 cancellationToken);
+
+            logger.LogInformation(
+                "SearchRestaurantsQuery processed successfully. TotalCount: {TotalCount}, PageNumber: {PageNumber}, PageSize: {PageSize}",
+                paginatedResult.TotalCount,
+                paginatedResult.PageNumber,
+                paginatedResult.PageSize);
 
             return paginatedResult;
         }

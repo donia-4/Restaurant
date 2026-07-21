@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace Restaurant.Application.Common.Messages
 {
-    internal class ExchangeNames
+    public static class ExchangeNames
     {
+        public const string RestaurantEvents = "restaurant.events";
+
+        public const string OrderEvents = "order.events";
+
+        public const string NotificationEvents = "notification.events";
     }
 }

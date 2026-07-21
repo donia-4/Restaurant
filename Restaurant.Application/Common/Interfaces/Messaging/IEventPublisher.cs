@@ -4,12 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Restaurant.Application.Common.Interfaces
+namespace Restaurant.Application.Common.Interfaces.Messaging
 {
     public interface IEventPublisher
     {
-        Task PublishAsync<T>(
-            T integrationEvent,
-            CancellationToken cancellationToken = default);
+        Task PublishAsync<TEvent>(
+            TEvent @event,
+            string routingKey,
+            CancellationToken cancellationToken = default)
+            where TEvent : class;
     }
 }

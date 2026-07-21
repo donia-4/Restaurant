@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace Restaurant.Application.Common.IntegrationEvents
 {
-    internal class RestaurantRequestedIntegrationEvent
-    {
-    }
+    public sealed record RestaurantRequestedIntegrationEvent(
+    Guid RestaurantId,
+    Guid OwnerId,
+    string RestaurantName,
+    DateTime OccurredOnUtc);
 }

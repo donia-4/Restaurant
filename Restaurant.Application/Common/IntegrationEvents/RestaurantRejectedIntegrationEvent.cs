@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace Restaurant.Application.Common.IntegrationEvents
 {
-    internal class RestaurantRejectedIntegrationEvent
-    {
-    }
+    public sealed record RestaurantRejectedIntegrationEvent(
+    Guid RestaurantId,
+    Guid OwnerId,
+    string RestaurantName,
+    string Reason,
+    DateTime RejectedAtUtc);
 }

@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace Restaurant.Application.Common.IntegrationEvents
 {
-    internal class RestaurantStatusChangedIntegrationEvent
-    {
-    }
+    public sealed record RestaurantStatusChangedIntegrationEvent(
+    Guid RestaurantId,
+    string PreviousStatus,
+    string CurrentStatus,
+    DateTime ChangedAtUtc);
 }

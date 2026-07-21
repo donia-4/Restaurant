@@ -65,7 +65,8 @@ public sealed class FoodRepository(RestaurantDbContext context)
 
     public void Remove(Food food)
     {
-        _context.Foods.Remove(food);
+        food.IsDeleted = true;
+        _context.Foods.Update(food);
     }
 
     public async Task SaveChangesAsync(
@@ -104,8 +105,13 @@ public sealed class FoodRepository(RestaurantDbContext context)
 
         return await PaginatedList<Food>.CreateAsync(query, pageNumber, pageSize, cancellationToken);
     }
+
     public async Task<AddOn?> GetAddOnByIdAsync(Guid addOnId, CancellationToken cancellationToken = default)
     {
         return await _context.AddOns.FirstOrDefaultAsync(x => x.Id == addOnId, cancellationToken);
+    }
+    public async Task<bool> ExistsWithTheGivenName(string name, CancellationToken cancellationToken = default)
+    {
+        return await _context.Foods.AnyAsync(f => f.Name.ToLower() == name, cancellationToken);
     }
 }

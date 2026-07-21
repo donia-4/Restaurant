@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
+using Restaurant.Application.Features.AddOns.Commands.DeleteAddOn;
 using Restaurant.Application.Features.AddOns.Dtos.UpdateAddOn;
 using Restaurant.Domain.AddOns;
 using Restaurant.Domain.Results;
@@ -12,13 +14,17 @@ using Restaurant.Domain.Results;
 namespace Restaurant.Application.Features.AddOns.Commands.UpdateAddOn
 {
     public sealed class UpdateAddOnCommandHandler(
-    IAddOnRepository addOnRepository)
+    IAddOnRepository addOnRepository, ILogger<UpdateAddOnCommandHandler> logger)
     : IRequestHandler<UpdateAddOnCommand, Result<UpdateAddOnResponse>>
     {
         public async Task<Result<UpdateAddOnResponse>> Handle(
             UpdateAddOnCommand command,
             CancellationToken cancellationToken)
         {
+            logger.LogInformation(
+                "Processing UpdateAddOnCommand for AddOn ID: {AddOnId}",
+                command.AddOnId);
+
             var addOn = await addOnRepository.GetByIdAsync(
                 command.AddOnId,
                 cancellationToken);
@@ -37,6 +43,10 @@ namespace Restaurant.Application.Features.AddOns.Commands.UpdateAddOn
                 return updateResult.Errors;
 
             await addOnRepository.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Successfully updated AddOn with ID: {AddOnId}",
+                command.AddOnId);
 
             return new UpdateAddOnResponse(
                 addOn.Id,

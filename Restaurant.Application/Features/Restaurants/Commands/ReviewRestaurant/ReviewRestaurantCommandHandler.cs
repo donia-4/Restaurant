@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Features.Restaurants.Dtos.ReviewRestaurant;
 using Restaurant.Domain.Restaurants;
@@ -13,13 +14,17 @@ using Restaurant.Domain.Results;
 namespace Restaurant.Application.Features.Restaurants.Commands.ReviewRestaurant
 {
     public sealed class ReviewRestaurantCommandHandler(
-    IRestaurantRepository restaurantRepository)
+    IRestaurantRepository restaurantRepository, ILogger<ReviewRestaurantCommandHandler> logger)
     : IRequestHandler<ReviewRestaurantCommand, Result<ReviewRestaurantResponse>>
     {
         public async Task<Result<ReviewRestaurantResponse>> Handle(
             ReviewRestaurantCommand command,
             CancellationToken cancellationToken)
         {
+            logger.LogInformation(
+                "Processing ReviewRestaurantCommand for Restaurant ID: {RestaurantId}",
+                command.RestaurantId);
+
             var request = command.Request;
 
             var restaurant = await restaurantRepository.GetByIdAsync(
@@ -41,6 +46,11 @@ namespace Restaurant.Application.Features.Restaurants.Commands.ReviewRestaurant
                 return result.Errors;
 
             await restaurantRepository.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Restaurant ID: {RestaurantId} has been {Status}",
+                restaurant.Id,
+                request.Status.ToString().ToLower());
 
             return new ReviewRestaurantResponse(
                 restaurant.Id,

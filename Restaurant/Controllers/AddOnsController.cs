@@ -62,10 +62,12 @@ namespace Restaurant.API.Controllers
         [HttpGet("~/api/foods/{foodId:guid}/addons")]
         public async Task<IActionResult> GetFoodAddOns(
             Guid foodId,
-            CancellationToken cancellationToken)
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            CancellationToken cancellationToken = default)
         {
             var result = await sender.Send(
-                new GetFoodAddOnsQuery(foodId),
+                new GetFoodAddOnsQuery(foodId, pageNumber, pageSize),
                 cancellationToken);
 
             return result.Match<IActionResult>(

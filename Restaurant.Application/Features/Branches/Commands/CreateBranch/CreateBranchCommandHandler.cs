@@ -1,7 +1,9 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Features.Branches.Dtos.CreateBranch;
 using Restaurant.Domain.Branches;
+using Restaurant.Domain.Foods;
 using Restaurant.Domain.Restaurants;
 using Restaurant.Domain.Results;
 using Restaurant.Domain.WorkingHours;
@@ -10,7 +12,7 @@ namespace Restaurant.Application.Features.Branches.Commands.CreateBranch;
 
 public sealed class CreateBranchCommandHandler(
     IRestaurantRepository restaurantRepository,
-    IBranchRepository branchRepository)
+    IBranchRepository branchRepository, ILogger<CreateBranchCommandHandler> logger)
     : IRequestHandler<CreateBranchCommand, Result<CreateBranchResponse>>
 {
     private readonly IRestaurantRepository _restaurantRepository = restaurantRepository;
@@ -20,6 +22,10 @@ public sealed class CreateBranchCommandHandler(
         CreateBranchCommand command,
         CancellationToken cancellationToken)
     {
+        logger.LogInformation(
+            "Processing CreateBranchCommand for Restaurant ID: {RestaurantId}",
+            command.Request.RestaurantId);
+        
         var request = command.Request;
 
         var restaurant = await _restaurantRepository.GetByIdAsync(
@@ -30,6 +36,11 @@ public sealed class CreateBranchCommandHandler(
         {
             return RestaurantErrors.NotFound;
         }
+
+        bool duplicateName = await _branchRepository.ExistsWithTheGivenName(request.Name.ToLower(), cancellationToken);
+
+        if (duplicateName)
+            return BranchErrors.DuplicateName;
 
         var branchResult = Branch.Create(
             Guid.NewGuid(),
@@ -87,6 +98,11 @@ public sealed class CreateBranchCommandHandler(
 
         await _branchRepository.SaveChangesAsync(
             cancellationToken);
+
+        logger.LogInformation(
+            "Successfully created Branch with ID: {BranchId} for Restaurant ID: {RestaurantId}",
+            branch.Id,
+            command.Request.RestaurantId);
 
         return new CreateBranchResponse(branch.Id);
     }

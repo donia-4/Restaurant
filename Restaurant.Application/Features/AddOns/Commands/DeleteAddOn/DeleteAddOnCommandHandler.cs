@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Domain.AddOns;
 using Restaurant.Domain.Foods;
@@ -12,13 +13,17 @@ using Restaurant.Domain.Results;
 namespace Restaurant.Application.Features.AddOns.Commands.DeleteAddOn
 {
     public sealed class DeleteAddOnCommandHandler(
-    IAddOnRepository addOnRepository)
+    IAddOnRepository addOnRepository, ILogger<DeleteAddOnCommandHandler> logger)
     : IRequestHandler<DeleteAddOnCommand, Result<Deleted>>
     {
         public async Task<Result<Deleted>> Handle(
             DeleteAddOnCommand command,
             CancellationToken cancellationToken)
         {
+            logger.LogInformation(
+                "Processing DeleteAddOnCommand for AddOn ID: {AddOnId}",
+                command.AddOnId);
+
             var addOn = await addOnRepository.GetByIdAsync(
                 command.AddOnId,
                 cancellationToken);
@@ -28,6 +33,10 @@ namespace Restaurant.Application.Features.AddOns.Commands.DeleteAddOn
 
             addOnRepository.Remove(addOn);
             await addOnRepository.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Successfully deleted AddOn with ID: {AddOnId}",
+                command.AddOnId);
 
             return Result.Deleted;
         }

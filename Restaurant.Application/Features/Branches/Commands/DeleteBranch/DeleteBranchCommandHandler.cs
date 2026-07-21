@@ -4,16 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Domain.Branches;
 using Restaurant.Domain.Results;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Restaurant.Application.Features.Branches.Commands.DeleteBranch
 {
     public sealed class DeleteBranchCommandHandler(
     IBranchRepository branchRepository,
     IRestaurantRepository restaurantRepository,
+    ILogger<DeleteBranchCommandHandler> logger,
     ICacheService cacheService)
     : IRequestHandler<DeleteBranchCommand, Result<Deleted>>
     {
@@ -25,6 +28,10 @@ namespace Restaurant.Application.Features.Branches.Commands.DeleteBranch
             DeleteBranchCommand request,
             CancellationToken cancellationToken)
         {
+            logger.LogInformation(
+                "Processing DeleteBranchCommand for Branch ID: {BranchId}",
+                request.BranchId);
+
             var branch = await _branchRepository.GetByIdAsync(
                 request.BranchId,
                 cancellationToken);
@@ -58,6 +65,10 @@ namespace Restaurant.Application.Features.Branches.Commands.DeleteBranch
             await _cacheService.RemoveByTagAsync($"branch:{branch.Id}", cancellationToken);
             await _cacheService.RemoveByTagAsync($"restaurant:{branch.RestaurantId}:branches", cancellationToken);
             await _cacheService.RemoveByTagAsync("branches", cancellationToken);
+
+            logger.LogInformation(
+                "Successfully deleted Branch with ID: {BranchId}",
+                request.BranchId);
 
             return Result.Deleted;
         }

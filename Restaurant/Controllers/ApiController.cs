@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Restaurant.Domain.Results;
 
 namespace Restaurant.API.Controllers
 {
     [ApiController]
+    [EnableRateLimiting("SlidingWindow")]
+
     public abstract class ApiController : ControllerBase
     {
         // ==========================================================

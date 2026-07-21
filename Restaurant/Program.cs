@@ -33,7 +33,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseExceptionHandler();
+
 app.UseCors("DefaultCorsPolicy");
+
+app.UseRateLimiter();
 
 app.UseOutputCache();
 

@@ -1,6 +1,9 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using Restaurant.API.Middlewares;
 
 namespace Restaurant.API;
 
@@ -14,7 +17,10 @@ public static class DependencyInjection
             .AddApiDocumentation()
             .AddAppCors(configuration)
             .AddAppOutputCaching()
-            .AddAppHealthChecks(configuration);
+            .AddAppHealthChecks(configuration)
+            .AddExceptionHandling()
+            .AddCustomProblemDetails()
+            .AddAppRateLimiting();
 
         return services;
     }
@@ -88,6 +94,42 @@ public static class DependencyInjection
         services
             .AddHealthChecks()
             .AddSqlServer(connectionString!);
+
+        return services;
+    }
+
+    private static IServiceCollection AddExceptionHandling(this IServiceCollection services)
+    {
+        services.AddExceptionHandler<GlobalExceptionHandler>();
+        return services;
+    }
+    private static IServiceCollection AddCustomProblemDetails(this IServiceCollection services)
+    {
+        services.AddProblemDetails(options => options.CustomizeProblemDetails = (context) =>
+        {
+            context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+            context.ProblemDetails.Extensions.Add("requestId", context.HttpContext.TraceIdentifier);
+        });
+
+        return services;
+    }
+
+    private static IServiceCollection AddAppRateLimiting(this IServiceCollection services)
+    {
+        services.AddRateLimiter(options =>
+        {
+            options.AddSlidingWindowLimiter("SlidingWindow", limiterOptions =>
+            {
+                limiterOptions.PermitLimit = 100;
+                limiterOptions.Window = TimeSpan.FromMinutes(1);
+                limiterOptions.SegmentsPerWindow = 6;
+                limiterOptions.QueueLimit = 10;
+                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                limiterOptions.AutoReplenishment = true;
+            });
+
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        });
 
         return services;
     }

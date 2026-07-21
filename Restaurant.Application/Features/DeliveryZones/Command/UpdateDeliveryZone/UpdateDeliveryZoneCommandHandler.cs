@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Application.Features.DeliveryZones.Dtos.UpdateDeliveryZone;
@@ -14,6 +15,7 @@ namespace Restaurant.Application.Features.DeliveryZones.Command.UpdateDeliveryZo
 {
     public sealed class UpdateDeliveryZoneCommandHandler(
     IDeliveryZoneRepository deliveryZoneRepository,
+    ILogger<UpdateDeliveryZoneCommandHandler> logger,
     ICacheService cacheService)
     : IRequestHandler<UpdateDeliveryZoneCommand, Result<UpdateDeliveryZoneResponse>>
     {
@@ -21,6 +23,10 @@ namespace Restaurant.Application.Features.DeliveryZones.Command.UpdateDeliveryZo
             UpdateDeliveryZoneCommand command,
             CancellationToken cancellationToken)
         {
+            logger.LogInformation(
+                "Processing UpdateDeliveryZoneCommand for Zone ID: {ZoneId}",
+                command.ZoneId);
+
             var zone = await deliveryZoneRepository.GetByIdAsync(
                 command.ZoneId,
                 cancellationToken);
@@ -54,6 +60,10 @@ namespace Restaurant.Application.Features.DeliveryZones.Command.UpdateDeliveryZo
 
             await cacheService.RemoveAsync($"deliveryzone:{zone.Id}", cancellationToken);
             await cacheService.RemoveAsync($"branch-delivery-zones:{zone.BranchId}", cancellationToken);
+
+            logger.LogInformation(
+                "Successfully updated Delivery Zone ID: {ZoneId}",
+                zone.Id);
 
             return new UpdateDeliveryZoneResponse(
                 zone.Id,

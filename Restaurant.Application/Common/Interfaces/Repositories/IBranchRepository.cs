@@ -21,7 +21,8 @@ namespace Restaurant.Application.Common.Interfaces.Repositories
 
         Task<IReadOnlyList<Branch>> GetByRestaurantIdAsync(Guid restaurantId, CancellationToken cancellationToken = default);
         void Remove(Branch branch);
-
+        Task<bool> ExistsWithTheGivenName(string name, CancellationToken cancellationToken = default);
+        IQueryable<Branch> GetByRestaurantId(Guid restaurantId);
         Task SaveChangesAsync(
             CancellationToken cancellationToken = default);
     }

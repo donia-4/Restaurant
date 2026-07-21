@@ -1,21 +1,50 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MediatR;
+﻿using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
+using Restaurant.Application.Common.Models;
 using Restaurant.Application.Features.Categories.Dtos.GetRestaurantCategories;
 using Restaurant.Domain.Results;
 
-namespace Restaurant.Application.Features.Categories.Queries.GetRestaurantCategories
+namespace Restaurant.Application.Features.Categories.Queries.GetRestaurantCategories;
+
+public sealed class GetRestaurantCategoriesQueryHandler(
+    ICategoryRepository categoryRepository,
+    ILogger<GetRestaurantCategoriesQueryHandler> logger)
+    : IRequestHandler<GetRestaurantCategoriesQuery, Result<PaginatedList<CategoryResponse>>>
 {
-    public sealed class GetRestaurantCategoriesQueryHandler(ICategoryRepository categoryRepository) : IRequestHandler<GetRestaurantCategoriesQuery, Result<IReadOnlyList<CategoryResponse>>>
+    public async Task<Result<PaginatedList<CategoryResponse>>> Handle(
+        GetRestaurantCategoriesQuery request,
+        CancellationToken cancellationToken)
     {
-        public async Task<Result<IReadOnlyList<CategoryResponse>>> Handle(GetRestaurantCategoriesQuery request, CancellationToken cancellationToken)
-        {
-            var categories = await categoryRepository.GetByRestaurantIdAsync(request.RestaurantId, cancellationToken);
-            return categories.Select(c => new CategoryResponse(c.Id, c.RestaurantId, c.Name, c.DisplayOrder, c.Foods.Count)).ToList();
-        }
+        logger.LogInformation(
+            "Handling GetRestaurantCategoriesQuery for RestaurantId: {RestaurantId}, PageNumber: {PageNumber}, PageSize: {PageSize}",
+            request.RestaurantId,
+            request.PageNumber,
+            request.PageSize);
+
+        var query = categoryRepository
+            .GetByRestaurantId(request.RestaurantId)
+            .Select(category => new CategoryResponse(
+                category.Id,
+                category.RestaurantId,
+                category.Name,
+                category.DisplayOrder,
+                category.Foods.Count));
+
+        var paginatedCategories =
+            await PaginatedList<CategoryResponse>.CreateAsync(
+                query,
+                request.PageNumber,
+                request.PageSize,
+                cancellationToken);
+
+        logger.LogInformation(
+            "Retrieved {ReturnedCount} categories out of {TotalCount} for RestaurantId: {RestaurantId}",
+            paginatedCategories.Items.Count,
+            paginatedCategories.TotalCount,
+            request.RestaurantId);
+
+        return paginatedCategories;
     }
 }

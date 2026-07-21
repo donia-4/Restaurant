@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Restaurant.Application.Common.Models;
 using Restaurant.Domain.AddOns;
 using Restaurant.Domain.Foods;
@@ -28,5 +29,6 @@ namespace Restaurant.Application.Common.Interfaces.Repositories
             int pageNumber,
             int pageSize,
             CancellationToken cancellationToken = default);
+        Task<bool> ExistsWithTheGivenName(string name, CancellationToken cancellationToken = default);
     }
 }

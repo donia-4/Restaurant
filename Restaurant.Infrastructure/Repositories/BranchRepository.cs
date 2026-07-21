@@ -49,7 +49,20 @@ namespace Restaurant.Infrastructure.Repositories
 
         public void Remove(Branch branch)
         {
-            _context.Branches.Remove(branch);
+            branch.IsDeleted = true;
+            _context.Branches.Update(branch);
+        }
+        public async Task<bool> ExistsWithTheGivenName(string name, CancellationToken cancellationToken = default)
+        {
+            return await _context.Branches.AnyAsync(b => b.Name.ToLower() == name, cancellationToken);
+        }
+
+        public IQueryable<Branch> GetByRestaurantId(Guid restaurantId)
+        {
+            return _context.Branches
+                .AsNoTracking()
+                .Include(b => b.WorkingHours)
+                .Where(b => b.RestaurantId == restaurantId);
         }
 
         public async Task SaveChangesAsync(
@@ -57,5 +70,6 @@ namespace Restaurant.Infrastructure.Repositories
         {
             await _context.SaveChangesAsync(cancellationToken);
         }
+
     }
 }

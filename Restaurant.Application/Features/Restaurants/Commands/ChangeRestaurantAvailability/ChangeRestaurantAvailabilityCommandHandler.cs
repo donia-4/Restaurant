@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Features.Restaurants.Dtos.ChangeRestaurantAvailability;
 using Restaurant.Domain.Restaurants;
@@ -13,7 +14,7 @@ using Restaurant.Domain.Results;
 namespace Restaurant.Application.Features.Restaurants.Commands.ChangeRestaurantAvailability
 {
     public sealed class ChangeRestaurantAvailabilityCommandHandler(
-    IRestaurantRepository restaurantRepository)
+    IRestaurantRepository restaurantRepository, ILogger<ChangeRestaurantAvailabilityCommandHandler> logger)
     : IRequestHandler<ChangeRestaurantAvailabilityCommand, Result<ChangeRestaurantAvailabilityResponse>>
     {
 
@@ -23,6 +24,8 @@ namespace Restaurant.Application.Features.Restaurants.Commands.ChangeRestaurantA
             ChangeRestaurantAvailabilityCommand command,
             CancellationToken cancellationToken)
         {
+            logger.LogInformation("Handling ChangeRestaurantAvailabilityCommand for RestaurantId: {RestaurantId}", command.RestaurantId);
+
             var request = command.Request;
 
             var restaurant = await restaurantRepository.GetByIdAsync(
@@ -49,6 +52,8 @@ namespace Restaurant.Application.Features.Restaurants.Commands.ChangeRestaurantA
                 return result.Errors;
 
             await restaurantRepository.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Restaurant availability changed successfully for RestaurantId: {RestaurantId} to Status: {Status}", restaurant.Id, request.Status);
 
             return new ChangeRestaurantAvailabilityResponse(
                 restaurant.Id,

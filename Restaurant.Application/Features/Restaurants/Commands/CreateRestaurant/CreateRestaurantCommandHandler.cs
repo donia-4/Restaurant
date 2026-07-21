@@ -1,8 +1,11 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Restaurant.Application.Common.Dtos;
+using Restaurant.Application.Common.IntegrationEvents;
+using Restaurant.Application.Common.Interfaces.Messaging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
+using Restaurant.Application.Common.Messages;
 using Restaurant.Application.Features.Restaurants.Commands.CreateRestaurant;
 using Restaurant.Application.Features.Restaurants.Dtos.CreateRestaurant;
 using Restaurant.Domain.Restaurants;
@@ -13,6 +16,7 @@ namespace Restaurant.Application.Features.Restaurants.CreateRestaurant;
 public sealed class CreateRestaurantCommandHandler(
     IRestaurantRepository restaurantRepository,
     IFileService fileService,
+    IEventPublisher eventPublisher,
     ILogger<CreateRestaurantCommandHandler> logger)
     : IRequestHandler<
         CreateRestaurantCommand,
@@ -76,6 +80,16 @@ public sealed class CreateRestaurantCommandHandler(
             cancellationToken);
 
         await restaurantRepository.SaveChangesAsync(
+            cancellationToken);
+
+        // Publish Integration Event after SaveChanges
+        await eventPublisher.PublishAsync(
+            new RestaurantRequestedIntegrationEvent(
+                restaurant.Id,
+                restaurant.OwnerId,
+                restaurant.Name,
+                DateTime.UtcNow),
+            RoutingKeys.RestaurantRequested,
             cancellationToken);
 
         logger.LogInformation(

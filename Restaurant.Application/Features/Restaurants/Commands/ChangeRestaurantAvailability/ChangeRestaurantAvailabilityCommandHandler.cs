@@ -5,7 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Restaurant.Application.Common.IntegrationEvents;
+using Restaurant.Application.Common.Interfaces.Messaging;
 using Restaurant.Application.Common.Interfaces.Repositories;
+using Restaurant.Application.Common.Messages;
 using Restaurant.Application.Features.Restaurants.Dtos.ChangeRestaurantAvailability;
 using Restaurant.Domain.Restaurants;
 using Restaurant.Domain.Restaurants.Enums;
@@ -14,7 +17,9 @@ using Restaurant.Domain.Results;
 namespace Restaurant.Application.Features.Restaurants.Commands.ChangeRestaurantAvailability
 {
     public sealed class ChangeRestaurantAvailabilityCommandHandler(
-    IRestaurantRepository restaurantRepository, ILogger<ChangeRestaurantAvailabilityCommandHandler> logger)
+    IRestaurantRepository restaurantRepository, 
+    ILogger<ChangeRestaurantAvailabilityCommandHandler> logger,
+    IEventPublisher eventPublisher)
     : IRequestHandler<ChangeRestaurantAvailabilityCommand, Result<ChangeRestaurantAvailabilityResponse>>
     {
 
@@ -39,6 +44,9 @@ namespace Restaurant.Application.Features.Restaurants.Commands.ChangeRestaurantA
             //if (restaurant.OwnerId != currentUserService.UserId)
             //    return RestaurantErrors.Unauthorized;
 
+            // Capture previous status before change
+            var previousStatus = restaurant.Status.ToString();
+
             Result<Updated> result = request.Status switch
             {
                 RestaurantStatus.Open => restaurant.Open(),
@@ -52,6 +60,21 @@ namespace Restaurant.Application.Features.Restaurants.Commands.ChangeRestaurantA
                 return result.Errors;
 
             await restaurantRepository.SaveChangesAsync(cancellationToken);
+
+            var currentStatus = restaurant.Status.ToString();
+
+            // Publish generic status changed event
+            if (previousStatus != currentStatus)
+            {
+                await eventPublisher.PublishAsync(
+                    new RestaurantStatusChangedIntegrationEvent(
+                        restaurant.Id,
+                        previousStatus,
+                        currentStatus,
+                        DateTime.UtcNow),
+                    RoutingKeys.RestaurantStatusChanged,
+                    cancellationToken);
+            }
 
             logger.LogInformation("Restaurant availability changed successfully for RestaurantId: {RestaurantId} to Status: {Status}", restaurant.Id, request.Status);
 

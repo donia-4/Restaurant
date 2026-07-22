@@ -5,10 +5,13 @@ using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using RabbitMQ.Client;
+using Restaurant.Application.Common.Interfaces.Messaging;
 using Restaurant.Application.Common.Interfaces.Repositories;
 using Restaurant.Application.Common.Interfaces.Services;
 using Restaurant.Infrastructure.Data;
 using Restaurant.Infrastructure.Data.Interceptors;
+using Restaurant.Infrastructure.RabbitMQ;
 using Restaurant.Infrastructure.Repositories;
 using Restaurant.Infrastructure.Services;
 using Restaurant.Infrastructure.Settings;
@@ -25,6 +28,7 @@ public static class DependencyInjection
             .AddDatabase(configuration)
             .AddCaching()
             .AddCloudinary(configuration)
+            .AddRabbitMq(configuration)
             .AddRepositories();
 
         return services;
@@ -75,7 +79,32 @@ public static class DependencyInjection
 
         return services;
     }
+    private static IServiceCollection AddRabbitMq(
+    this IServiceCollection services,
+    IConfiguration configuration)
+    {
+        services.Configure<RabbitMqOptions>(
+            configuration.GetSection(RabbitMqOptions.SectionName));
 
+        services.AddSingleton<ConnectionFactory>(sp =>
+        {
+            var options = sp
+                .GetRequiredService<IOptions<RabbitMqOptions>>()
+                .Value;
+
+            return new ConnectionFactory
+            {
+                HostName = options.HostName,
+                Port = options.Port,
+                UserName = options.UserName,
+                Password = options.Password
+            };
+        });
+
+        services.AddSingleton<IEventPublisher, RabbitMqPublisher>();
+
+        return services;
+    }
     private static IServiceCollection AddCaching(
         this IServiceCollection services)
     {
